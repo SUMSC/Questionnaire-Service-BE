@@ -124,6 +124,28 @@ class CreateParticipate(Mutation):
         return CreateParticipate(participate=participate, ok=ok)
 
 
+# TODO: Update User Last Login Time
+class UserLogin(Mutation):
+    pass
+
+
+# TODO: Update User Data
+class UpdateUserData(Mutation):
+    pass
+
+
+# TODO: Update Event Data
+class UpdateEventData(Mutation):
+    pass
+
+
+# TODO: Leave Event (Update Participate)
+class LeaveParticipate(Mutation):
+    pass
+
+# TODO: Add Other Resource Mutation
+
+
 class Query(ObjectType):
     node = Node.Field()
     all_event = SQLAlchemyConnectionField(EConnection)

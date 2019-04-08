@@ -1,8 +1,6 @@
 import os
-import click
 
 from flask import Flask, request, jsonify
-from flask.cli import with_appcontext
 from flask_graphql import GraphQLView
 from .model import db
 from .schema import schema
