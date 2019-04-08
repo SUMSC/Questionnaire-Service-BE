@@ -1,10 +1,10 @@
-# Questionnaire-Service-BE
+# Questionnaire-Service-Resource
 
-Backend of SUMSC Questionnaire Service
+Resource Service for eForm.
 
-Flask \ SQLAlchemy \ Graphene
+**Dependencies**: Flask \ SQLAlchemy \ Graphene
 
-## Todo List
+## Task List
 
 (Solved)
 - ORM + GraphQL
