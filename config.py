@@ -1,12 +1,14 @@
+import os
+
+
 class Config(object):
     DEBUG = False
     TESTING = False
-    DATABASE_URI = 'sqlite:///:memory:'
     TRACK_MODIFICATIONS = True
 
 
 class ProductionConfig(Config):
-    DATABASE_URI = 'mysql://user@localhost/foo'
+    pass
 
 
 class DevelopmentConfig(Config):

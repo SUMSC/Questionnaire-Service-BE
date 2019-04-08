@@ -1,21 +1,25 @@
-from flask import Flask
+import os
+import click
+
+from flask import Flask, request, jsonify
+from flask.cli import with_appcontext
 from flask_graphql import GraphQLView
-from .model import db_session
+from .model import db
 from .schema import schema
-from config import config
 
 
-def create_app(test_config=None):
+def create_app():
     app = Flask(__name__, instance_relative_config=True)
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI")
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    if test_config is None:
-        app.config.from_object(config['DEVELOP'])
-    else:
-        app.config.from_object(config['TESTING'])
+    db.init_app(app)
 
     @app.route('/')
-    def hello():
-        return 'Hello, World!'
+    def resource():
+        req = request.get_json()
+        res = schema.execute(req, context_value={'session': db.session})
+        return jsonify(res)
 
     app.add_url_rule(
         '/graphql',
@@ -25,9 +29,5 @@ def create_app(test_config=None):
             graphiql=True  # for having the GraphiQL interface
         )
     )
-
-    @app.teardown_appcontext
-    def shutdown_session(exception=None):
-        db_session.remove()
 
     return app
