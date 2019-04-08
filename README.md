@@ -6,7 +6,13 @@ Flask \ SQLAlchemy \ Graphene
 
 ## Todo List
 
+(Solved)
 - ORM + GraphQL
     - SQLAlchemy + Graphene
-- Mutations
+- Create Mutations
     - Graphene
+
+(TODO)
+- Update Mutations
+- Delete Mutations
+- Auth
