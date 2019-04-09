@@ -1,6 +1,7 @@
 import graphene
 import logging
 
+from datetime import datetime
 from graphene import Mutation, ObjectType, Schema, InputObjectType
 from graphene.relay import Node, Connection
 from graphene_sqlalchemy import SQLAlchemyObjectType, SQLAlchemyConnectionField
@@ -53,16 +54,14 @@ class CreateEvent(Mutation):
     event = graphene.Field(lambda: Event)
 
     @staticmethod
-    def mutate(root, info, name, detail, creator_id, form, start_time, deadline):
-        event_data = {
-            name: name,
-            detail: detail,
-            creator_id: creator_id,
-            form: form,
-            start_time: start_time,
-            deadline: deadline
-        }
-        logging.info("[Mutation - CreateEvent] {}".format(str(event_data)))
+    def mutate(root, info, **event_data):
+        """
+
+        :param root:
+        :param info:
+        :param event_data: name, detail, creator_id, form, start_time, deadline
+        :return:
+        """
         event = EventModel(**event_data)
         db.session.add(event)
         db.session.commit()
@@ -81,12 +80,14 @@ class CreateUser(Mutation):
     user = graphene.Field(lambda : User)
 
     @staticmethod
-    def mutate(root, info, id_tag, name, email=None):
-        user_data = {
-            id_tag: id_tag,
-            name: name,
-            email: email
-        }
+    def mutate(root, info, **user_data):
+        """
+
+        :param root:
+        :param info:
+        :param user_data: id_tag, name, email
+        :return:
+        """
         user = UserModel(**user_data)
         db.session.add(user)
         db.session.commit()
@@ -105,12 +106,14 @@ class CreateParticipate(Mutation):
     event = graphene.Field(lambda: Participate)
 
     @staticmethod
-    def mutate(root, info, event_id, user_id, form):
-        participate_data = {
-            event_id: event_id,
-            user_id: user_id,
-            form: form
-        }
+    def mutate(root, info, **participate_data):
+        """
+
+        :param root:
+        :param info:
+        :param participate_data: event_id, user_id, form
+        :return:
+        """
         participate = ParticipateModel(**participate_data)
         db.session.add(participate)
         try:
@@ -124,23 +127,75 @@ class CreateParticipate(Mutation):
         return CreateParticipate(participate=participate, ok=ok)
 
 
-# TODO: Update User Last Login Time
 class UserLogin(Mutation):
-    pass
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    ok = graphene.Boolean()
+    user = graphene.Field(lambda: User)
+
+    @staticmethod
+    def mutate(root, info, id):
+        curr_user = db.session.query(UserModel).filter_by(id=id).first_or_404()
+        if curr_user is None:
+            return UserLogin(ok=False, user=curr_user)
+        curr_user.last_login = datetime.now()
+        db.session.commit()
+        return UserLogin(user=curr_user, ok=True)
 
 
-# TODO: Update User Data
 class UpdateUserData(Mutation):
-    pass
+    class Arguments:
+        id = graphene.ID(required=True)
+        email = graphene.String()
+
+    ok = graphene.Boolean()
+    user = graphene.Field(lambda: User)
+
+    @staticmethod
+    def mutate(root, info, id, **user_data):
+        curr_user = db.session.query(UserModel).filter_by(id=id).first_or_404()
+        if curr_user is None:
+            return UpdateUserData(ok=False, user=None)
+        if len(list(filter(lambda x: x[1] is not None, user_data.items()))) == 0:
+            return UpdateUserData(ok=True, user=curr_user)
+        for i in user_data:
+            setattr(curr_user, i, user_data[i])
+        db.session.commit()
+        return UpdateUserData(user=curr_user, ok=True)
 
 
-# TODO: Update Event Data
 class UpdateEventData(Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+        name = graphene.String()
+        detail = graphene.String()
+        form = graphene.JSONString()
+        start_time = graphene.DateTime()
+        deadline = graphene.DateTime()
+
+    ok = graphene.Boolean()
+    event = graphene.Field(lambda : Event)
+
+    @staticmethod
+    def mutate(root, info, id, **event_data):
+        curr_event = db.session.query(EventModel).filter_by(id=id).first_or_404()
+        if curr_event is None:
+            UpdateEventData(ok=False, event=None)
+        if len(list(filter(lambda x: x[1] is not None, event_data.items()))) == 0:
+            return UpdateEventData(ok=True, user=curr_event)
+        for i in event_data:
+            setattr(curr_event, i, event_data[i])
+        db.session.commit()
+        return UpdateEventData(user=curr_event, ok=True)
+
+# TODO: JOIN Event(Update Participate)
+class JoinEvent(Mutation):
     pass
 
 
 # TODO: Leave Event (Update Participate)
-class LeaveParticipate(Mutation):
+class LeaveEvent(Mutation):
     pass
 
 # TODO: Add Other Resource Mutation
