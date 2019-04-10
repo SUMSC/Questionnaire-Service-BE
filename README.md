@@ -12,9 +12,9 @@
 - Web Service: 服务器端渲染 / Nuxt、Vue、Koa
 
 目前进度：
-- Auth Service:     |===           |
-- Resource Service: |======        |
-- Web Service:      |======        |
+- Auth Service: 10%
+- Resource Service: 50%
+- Web Service: 30%
 
 ## 需求分析
 
@@ -46,8 +46,8 @@
 
 - `user`: 用户表
     - `id`: `INT`, `Primary Key`, 自增主键
-    - `id_tag`: `VARCHAR(20)`, `UNIQUE`, 统一认证学号
-    - `name`: `VARCHAR(10)`, 用户姓名
+    - `id_tag`: `VARCHAR(16)`, `UNIQUE`, 统一认证学号
+    - `name`: `VARCHAR(12)`, 用户姓名
 - `event`: 活动表
     - `id`: `INT`, `Primary Key`, 自增主键
     - `name`: `VARCHAR(32)`, `UNIQUE`, 活动名称
@@ -55,6 +55,7 @@
     - `start_time`: `TIMESTAMP`, 活动开始时间
     - `deadline`: `TIMESTAMP`, 报名截止时间
     - `form`: `TEXT`, 事实上是`JSON`，存储活动报名表单样式
+    - `creator_id`: `INT`, `Foreign Key`, 创建者ID
     - `_active`: `BOOLEAN`, 活动是否还可以报名
 - `participate`: 参与活动表
     - `event_id`: `INT`, `Foreign Key`
@@ -68,9 +69,15 @@
     - `form`: `TEXT`, 事实上是`JSON`, 存储问卷表单样式
     - `is_anonymous`: `BOOLEAN`, 问卷是否匿名
     - `_active`: `BOOLEAN`, 问卷是否还可以填写
-- `answer`: 填写问卷表
+- `answer`: 实名答卷表
+    - `id`: `INT`, `Primary Key`, 自增主键
     - `answer_data`: `TEXT`, 事实上是`JSON`, 用户填写的问卷
-    - `user_id`: `INT`, 填写人, 匿名则为 -1
+    - `user_id`: `INT`, 填写人
+    - `qnaire_id`: `INT`, 问卷ID
+- `AnonymousAnswer`: 匿名答卷表
+    - `id`: `INT`, `Primary Key`, 自增主键
+    - `answer_data`: `TEXT`, 事实上是`JSON`, 用户填写的问卷
+    - `user_id`: `INT`, 填写人
     - `qnaire_id`: `INT`, 问卷ID
 
 ### GraphQL API

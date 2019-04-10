@@ -189,6 +189,7 @@ class UpdateEventData(Mutation):
         db.session.commit()
         return UpdateEventData(user=curr_event, ok=True)
 
+
 # TODO: JOIN Event(Update Participate)
 class JoinEvent(Mutation):
     pass
