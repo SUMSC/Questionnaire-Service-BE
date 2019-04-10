@@ -40,7 +40,7 @@
 
 ## 数据存储设计
 
-数据库：PostgreSQL 11
+数据库：PostgreSQL 10 + Elastic Search
 
 ### 表
 
@@ -54,7 +54,7 @@
     - `detail`: `TEXT`, 活动信息
     - `start_time`: `TIMESTAMP`, 活动开始时间
     - `deadline`: `TIMESTAMP`, 报名截止时间
-    - `form`: `TEXT`, 事实上是`JSON`，存储活动报名表单样式
+    - `form`: `JSON`，存储活动报名表单样式
     - `creator_id`: `INT`, `Foreign Key`, 创建者ID
     - `_active`: `BOOLEAN`, 活动是否还可以报名
 - `participate`: 参与活动表
@@ -66,7 +66,7 @@
     - `name`: `VARCHAR(32)`, 问卷名称
     - `detail`: `TEXT`, 问卷信息
     - `deadline`: `TIMESTAMP`, 问卷截止时间
-    - `form`: `TEXT`, 事实上是`JSON`, 存储问卷表单样式
+    - `form`: `JSON`, 存储问卷表单样式
     - `is_anonymous`: `BOOLEAN`, 问卷是否匿名
     - `_active`: `BOOLEAN`, 问卷是否还可以填写
 - `answer`: 实名答卷表
@@ -76,7 +76,7 @@
     - `qnaire_id`: `INT`, 问卷ID
 - `AnonymousAnswer`: 匿名答卷表
     - `id`: `INT`, `Primary Key`, 自增主键
-    - `answer_data`: `TEXT`, 事实上是`JSON`, 用户填写的问卷
+    - `answer_data`: `JSON`, 用户填写的问卷
     - `user_id`: `INT`, 填写人
     - `qnaire_id`: `INT`, 问卷ID
 
