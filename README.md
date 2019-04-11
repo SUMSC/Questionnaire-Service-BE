@@ -5,6 +5,7 @@
 系统的主要需求为两个：问卷、活动报名。为了以后的功能添加和迭代更加方便，不再需要将原有的代码进行重新分割，我们将这两个较为相似的功能点分别建表和编码。
 
 整个系统目前分为三块，Auth Service、Resource Service、Web Service。
+基础设施：Confluent Kafka, Elastic stack，Kong API Gateway，ZomboDB
 
 技术选型：
 - Auth Service: JWT / ...
@@ -97,4 +98,22 @@
 - UpdateEvent: 更新活动
 - UpdateParticipation: 更新报名信息
 
+## 基础设施
 
+> 目前部署仅支持Docker-compose
+
+### Kafka
+
+用于解耦合
+
+### Elastic Stack
+
+用于提供数据库搜索API以及日志分析监控
+
+### Kong
+
+用于解决负载均衡，缓存，路由，访问控制，服务代理，监控，日志等
+
+### Zombodb
+
+用于将PG数据导入elastic
