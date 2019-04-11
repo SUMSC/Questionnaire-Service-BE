@@ -104,7 +104,7 @@
 
 ### Kafka
 
-用于解耦合
+用于解耦合,使用社区免费版本的Confluent Kafka辅以开源前端监控
 
 ### Elastic Stack
 
