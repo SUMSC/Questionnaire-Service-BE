@@ -1,11 +1,13 @@
+from graphene import Schema
 import graphene
-import logging
 
-from datetime import datetime
-from graphene import Mutation, ObjectType, Schema, InputObjectType
+from graphql.error import located_error
+from graphene import Mutation, ObjectType
 from graphene.relay import Node, Connection
 from graphene_sqlalchemy import SQLAlchemyObjectType, SQLAlchemyConnectionField
-from .model import db, Event as EventModel, User as UserModel, Participate as ParticipateModel
+from .models import db, Event as EventModel, User as UserModel, \
+    Participate as ParticipateModel, Qnaire as QnaireModel, AnonymousAnswer as AnonymousAnswerModel, \
+    Answer as AnswerModel
 
 
 class Event(SQLAlchemyObjectType):
@@ -26,6 +28,24 @@ class Participate(SQLAlchemyObjectType):
         interfaces = (Node,)
 
 
+class Qnaire(SQLAlchemyObjectType):
+    class Meta:
+        model = QnaireModel
+        interfaces = (Node,)
+
+
+class AnonymousAnswer(SQLAlchemyObjectType):
+    class Meta:
+        model = AnonymousAnswerModel
+        interfaces = (Node,)
+
+
+class Answer(SQLAlchemyObjectType):
+    class Meta:
+        model = AnswerModel
+        interfaces = (Node,)
+
+
 class EConnection(Connection):
     class Meta:
         node = Event
@@ -41,13 +61,38 @@ class PConnection(Connection):
         node = Participate
 
 
+class QConnection(Connection):
+    class Meta:
+        node = Qnaire
+
+
+class AnonyAConnection(Connection):
+    class Meta:
+        node = AnonymousAnswer
+
+
+class AConnection(Connection):
+    class Meta:
+        node = Answer
+
+
+class Query(ObjectType):
+    node = Node.Field()
+    all_event = SQLAlchemyConnectionField(EConnection)
+    all_user = SQLAlchemyConnectionField(UConnection)
+    all_participate = SQLAlchemyConnectionField(PConnection)
+    all_qnaire = SQLAlchemyConnectionField(QConnection)
+    all_anonymous_answer = SQLAlchemyConnectionField(AnonyAConnection)
+    all_answer = SQLAlchemyConnectionField(AConnection)
+
+
 class CreateEvent(Mutation):
     class Arguments:
         name = graphene.String(required=True)
         detail = graphene.String(required=True)
-        creator_id = graphene.String(required=True)
+        creator_id = graphene.Int(required=True)
         form = graphene.JSONString(required=True)
-        start_time = graphene.DateTime()
+        start_time = graphene.DateTime(required=True)
         deadline = graphene.DateTime(required=True)
 
     ok = graphene.Boolean()
@@ -56,7 +101,7 @@ class CreateEvent(Mutation):
     @staticmethod
     def mutate(root, info, **event_data):
         """
-
+        创建活动
         :param root:
         :param info:
         :param event_data: name, detail, creator_id, form, start_time, deadline
@@ -65,8 +110,8 @@ class CreateEvent(Mutation):
         event = EventModel(**event_data)
         db.session.add(event)
         db.session.commit()
-        event = Event(**event_data)
         ok = True
+        event = Event(**event_data)
         return CreateEvent(event=event, ok=ok)
 
 
@@ -74,15 +119,14 @@ class CreateUser(Mutation):
     class Arguments:
         id_tag = graphene.ID(required=True)
         name = graphene.String(required=True)
-        email = graphene.String()
 
     ok = graphene.Boolean()
-    user = graphene.Field(lambda : User)
+    user = graphene.Field(lambda: User)
 
     @staticmethod
     def mutate(root, info, **user_data):
         """
-
+        创建用户
         :param root:
         :param info:
         :param user_data: id_tag, name, email
@@ -96,19 +140,48 @@ class CreateUser(Mutation):
         return CreateUser(user=user, ok=ok)
 
 
-class CreateParticipate(Mutation):
+class CreateNaire(Mutation):
     class Arguments:
-        event_id = graphene.ID(required=True)
-        user_id = graphene.ID(required=True)
+        name = graphene.String(required=True)
+        detail = graphene.String()
+        deadline = graphene.String(required=True)
+        form = graphene.JSONString(required=True)
+        is_anonymous = graphene.Boolean(required=True)
+        creator_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    qnaire = graphene.Field(lambda: Qnaire)
+
+    @staticmethod
+    def mutate(root, info, **qnaire_data):
+        """
+        创建问卷
+        :param root:
+        :param info:
+        :param qnaire_data: name, detail, deadline, form, is_anonymous, creator_id
+        :return:
+        """
+        qnaire = QnaireModel(**qnaire_data)
+        db.session.add(qnaire)
+        db.session.commit()
+        qnaire = Qnaire(**qnaire_data)
+        ok = True
+        return CreateNaire(qnaire=qnaire, ok=ok)
+
+
+class JoinEvent(Mutation):
+    class Arguments:
+        event_id = graphene.Int(required=True)
+        user_id = graphene.Int(required=True)
         form = graphene.JSONString(required=True)
 
     ok = graphene.Boolean()
-    event = graphene.Field(lambda: Participate)
+    participate = graphene.Field(lambda: Participate)
 
     @staticmethod
     def mutate(root, info, **participate_data):
         """
-
+        用户加入活动
         :param root:
         :param info:
         :param participate_data: event_id, user_id, form
@@ -116,18 +189,58 @@ class CreateParticipate(Mutation):
         """
         participate = ParticipateModel(**participate_data)
         db.session.add(participate)
-        try:
-            db.session.commit()
-        except Exception as e:
-            ok = False
-            participate = None
-        else:
-            participate = Participate(**participate_data)
-            ok = True
-        return CreateParticipate(participate=participate, ok=ok)
+        db.session.commit()
+        participate = Participate(**participate_data)
+        return JoinEvent(participate=participate, ok=True)
 
 
-class UserLogin(Mutation):
+class AnonymousAnswerNaire(Mutation):
+    class Arguments:
+        naire_id = graphene.Int(required=True)
+        answer = graphene.JSONString(required=True)
+
+    ok = graphene.Boolean()
+    answer = graphene.Field(lambda: AnonymousAnswer)
+
+    @staticmethod
+    def mutate(root, info, **answer_data):
+        answer = AnonymousAnswerModel(**answer_data)
+        db.session.add(answer)
+        db.session.commit()
+        answer = AnonymousAnswer(**answer_data)
+        return AnonymousAnswerNaire(ok=True, answer=answer)
+
+
+class AnswerNaire(Mutation):
+    class Arguments:
+        naire_id = graphene.Int(required=True)
+        answer = graphene.JSONString(required=True)
+        user_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    answer = graphene.Field(lambda: Answer)
+
+    @staticmethod
+    def mutate(root, info, **answer_data):
+        answer = AnswerModel(**answer_data)
+        db.session.add(answer)
+        db.session.commit()
+        answer = Answer(**answer_data)
+        return AnswerNaire(ok=True, answer=answer)
+
+
+def updateData(curr, data):
+    if curr is None:
+        return False, curr
+    if len(list(filter(lambda x: x[1] is not None, data.items()))) == 0:
+        return True, curr
+    for i in data:
+        setattr(curr, i, data[i])
+    db.session.commit()
+    return True
+
+
+class UpdateUser(Mutation):
     class Arguments:
         id = graphene.ID(required=True)
 
@@ -135,37 +248,14 @@ class UserLogin(Mutation):
     user = graphene.Field(lambda: User)
 
     @staticmethod
-    def mutate(root, info, id):
+    def mutate(root, info, id, **data):
         curr_user = db.session.query(UserModel).filter_by(id=id).first_or_404()
-        if curr_user is None:
-            return UserLogin(ok=False, user=curr_user)
-        curr_user.last_login = datetime.now()
-        db.session.commit()
-        return UserLogin(user=curr_user, ok=True)
+        res = updateData(curr_user, data)
+        curr_user = User(**data)
+        return UpdateUser(ok=res, user=curr_user)
 
 
-class UpdateUserData(Mutation):
-    class Arguments:
-        id = graphene.ID(required=True)
-        email = graphene.String()
-
-    ok = graphene.Boolean()
-    user = graphene.Field(lambda: User)
-
-    @staticmethod
-    def mutate(root, info, id, **user_data):
-        curr_user = db.session.query(UserModel).filter_by(id=id).first_or_404()
-        if curr_user is None:
-            return UpdateUserData(ok=False, user=None)
-        if len(list(filter(lambda x: x[1] is not None, user_data.items()))) == 0:
-            return UpdateUserData(ok=True, user=curr_user)
-        for i in user_data:
-            setattr(curr_user, i, user_data[i])
-        db.session.commit()
-        return UpdateUserData(user=curr_user, ok=True)
-
-
-class UpdateEventData(Mutation):
+class UpdateEvent(Mutation):
     class Arguments:
         id = graphene.ID(required=True)
         name = graphene.String()
@@ -175,44 +265,83 @@ class UpdateEventData(Mutation):
         deadline = graphene.DateTime()
 
     ok = graphene.Boolean()
-    event = graphene.Field(lambda : Event)
+    event = graphene.Field(lambda: Event)
 
     @staticmethod
-    def mutate(root, info, id, **event_data):
+    def mutate(root, info, id, **data):
         curr_event = db.session.query(EventModel).filter_by(id=id).first_or_404()
-        if curr_event is None:
-            UpdateEventData(ok=False, event=None)
-        if len(list(filter(lambda x: x[1] is not None, event_data.items()))) == 0:
-            return UpdateEventData(ok=True, user=curr_event)
-        for i in event_data:
-            setattr(curr_event, i, event_data[i])
+        res = updateData(curr_event, data)
+        curr_event = Event(**data)
+        return UpdateEvent(ok=res, event=curr_event)
+
+
+class UpdateNaire(Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+        name = graphene.String()
+        detail = graphene.String()
+        form = graphene.JSONString()
+        start_time = graphene.DateTime()
+        deadline = graphene.DateTime()
+
+    ok = graphene.Boolean()
+    event = graphene.Field(lambda: Event)
+
+    @staticmethod
+    def mutate(root, info, id, **data):
+        curr_naire = db.session.query(EventModel).filter_by(id=id).first_or_404()
+        res = updateData(curr_naire, data)
+        curr_naire = Qnaire(**data)
+        return UpdateNaire(ok=res, event=curr_naire)
+
+
+class UpdateParticipate(Mutation):
+    class Arguments:
+        user_id = graphene.Int(required=True)
+        event_id = graphene.Int(required=True)
+        join_data = graphene.JSONString(required=True)
+
+    ok = graphene.Boolean()
+    participate = graphene.Field(lambda: Participate)
+
+    @staticmethod
+    def mutate(root, info, user_id, event_id, join_data):
+        curr = db.session.query(ParticipateModel).filter(
+            ParticipateModel.event_id == event_id and ParticipateModel.user_id == user_id).first_or_404()
+        if curr is None:
+            return UpdateParticipate(ok=False, curr=None)
+        curr.join_data = join_data
         db.session.commit()
-        return UpdateEventData(user=curr_event, ok=True)
+        curr = Participate(user_id=user_id, event_id=event_id, join_data=join_data)
+        return UpdateParticipate(ok=True, participate=curr)
 
 
-# TODO: JOIN Event(Update Participate)
-class JoinEvent(Mutation):
-    pass
+class UpdateAnswer(Mutation):
+    class Arguments:
+        user_id = graphene.Int(required=True)
+        qnaire_id = graphene.Int(required=True)
+        answer_data = graphene.JSONString(required=True)
 
+    ok = graphene.Boolean()
+    answer = graphene.Field(lambda: Answer)
 
-# TODO: Leave Event (Update Participate)
-class LeaveEvent(Mutation):
-    pass
-
-# TODO: Add Other Resource Mutation
-
-
-class Query(ObjectType):
-    node = Node.Field()
-    all_event = SQLAlchemyConnectionField(EConnection)
-    all_user = SQLAlchemyConnectionField(UConnection)
-    all_participate = SQLAlchemyConnectionField(PConnection)
+    @staticmethod
+    def mutate(root, info, user_id, qnaire_id, answer_data):
+        curr = db.session.query(AnswerModel).filter(
+            AnswerModel.user_id == user_id and AnswerModel.qnaire_id == qnaire_id).first_or_404()
+        if curr is None:
+            return UpdateAnswer(ok=False, curr=None)
+        curr.answer_data = answer_data
+        db.session.commit()
+        curr = Answer(user_id=user_id, qnaire_id=qnaire_id, answer_data=answer_data)
+        return UpdateAnswer(ok=True, answer=curr)
 
 
 class DBMutation(ObjectType):
     create_event = CreateEvent.Field()
     create_user = CreateUser.Field()
-    create_participate = CreateParticipate.Field()
+    create_naire = CreateNaire.Field()
+    join_event = JoinEvent.Field()
 
 
 schema = Schema(query=Query, mutation=DBMutation)

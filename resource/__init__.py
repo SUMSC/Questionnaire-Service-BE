@@ -2,22 +2,29 @@ import os
 
 from flask import Flask, request, jsonify
 from flask_graphql import GraphQLView
-from .model import db
+from .models import db
 from .schema import schema
 
 
-def create_app():
+def create_app(test_conf=None):
     app = Flask(__name__, instance_relative_config=True)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI")
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    if test_conf:
+        for i in test_conf:
+            app.config[i] = test_conf[i]
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqldb://root:sumsc666@wzhzzmzzy.xyz:33306/eform"
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        app.config['SQLALCHEMY_POOL_RECYCLE'] = 5
 
     db.init_app(app)
 
-    @app.route('/')
+    @app.route('/', methods=['POST'])
     def resource():
         req = request.get_json()
-        res = schema.execute(req, context_value={'session': db.session})
-        return jsonify(res)
+        query = req['query']
+        variables = req['variables']
+        res = schema.execute(query, variables=variables, context_value={'session': db.session})
+        return jsonify(res.data)
 
     app.add_url_rule(
         '/graphql',

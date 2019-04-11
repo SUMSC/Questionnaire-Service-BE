@@ -67,17 +67,15 @@
     - `detail`: `TEXT`, 问卷信息
     - `deadline`: `TIMESTAMP`, 问卷截止时间
     - `form`: `TEXT`, 事实上是`JSON`, 存储问卷表单样式
+    - `creator_id`: `INT`, `Foreign Key`, 创建者ID
     - `is_anonymous`: `BOOLEAN`, 问卷是否匿名
     - `_active`: `BOOLEAN`, 问卷是否还可以填写
 - `answer`: 实名答卷表
-    - `id`: `INT`, `Primary Key`, 自增主键
     - `answer_data`: `TEXT`, 事实上是`JSON`, 用户填写的问卷
     - `user_id`: `INT`, 填写人
     - `qnaire_id`: `INT`, 问卷ID
 - `AnonymousAnswer`: 匿名答卷表
-    - `id`: `INT`, `Primary Key`, 自增主键
     - `answer_data`: `TEXT`, 事实上是`JSON`, 用户填写的问卷
-    - `user_id`: `INT`, 填写人
     - `qnaire_id`: `INT`, 问卷ID
 
 ### GraphQL API
@@ -92,8 +90,8 @@
 - CreateEvent: 创建活动
 - CreateNaire: 创建问卷
 - JoinEvent: 加入活动
-- LeaveEvent: 退出活动
 - AnswerNaire: 填写问卷
+- AnonymousAnswerNaire: 填写匿名问卷
 - UpdateNaire: 更新问卷
 - UpdateAnswer: 更新答卷
 - UpdateEvent: 更新活动
