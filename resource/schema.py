@@ -86,6 +86,10 @@ class Query(ObjectType):
     all_answer = SQLAlchemyConnectionField(AConnection)
 
 
+# TODO: Create Mutation Log
+#       INFO：Create Data
+#       WARNING：Data Existed
+#       ERROR：Create Error
 class CreateEvent(Mutation):
     class Arguments:
         name = graphene.String(required=True)
@@ -229,7 +233,13 @@ class AnswerNaire(Mutation):
         return AnswerNaire(ok=True, answer=answer)
 
 
-def updateData(curr, data):
+def updateData(curr, data: dict):
+    """
+    Update sth
+    :param curr:
+    :param data:
+    :return:
+    """
     if curr is None:
         return False, curr
     if len(list(filter(lambda x: x[1] is not None, data.items()))) == 0:
@@ -240,6 +250,10 @@ def updateData(curr, data):
     return True
 
 
+# TODO: Update Mutation
+#       INFO: Update Data
+#       Warning: Nothing to update
+#       Error: Update Failed
 class UpdateUser(Mutation):
     class Arguments:
         id = graphene.ID(required=True)
