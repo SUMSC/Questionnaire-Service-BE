@@ -86,6 +86,16 @@ class Query(ObjectType):
     all_answer = SQLAlchemyConnectionField(AConnection)
 
 
+def createData(new_field):
+    db.session.add(new_field)
+    try:
+        db.session.commit()
+    except located_error.GraphQLLocatedError as e:
+        return e.message, False
+    else:
+        return "success", True
+
+
 # TODO: Create Mutation Log
 #       INFO：Create Data
 #       WARNING：Data Existed
@@ -101,6 +111,7 @@ class CreateEvent(Mutation):
 
     ok = graphene.Boolean()
     event = graphene.Field(lambda: Event)
+    message = graphene.String()
 
     @staticmethod
     def mutate(root, info, **event_data):
@@ -111,12 +122,9 @@ class CreateEvent(Mutation):
         :param event_data: name, detail, creator_id, form, start_time, deadline
         :return:
         """
-        event = EventModel(**event_data)
-        db.session.add(event)
-        db.session.commit()
-        ok = True
+        detail, ok = createData(EventModel(**event_data))
         event = Event(**event_data)
-        return CreateEvent(event=event, ok=ok)
+        return CreateEvent(event=event, ok=ok, detail=detail)
 
 
 class CreateUser(Mutation):
@@ -126,6 +134,7 @@ class CreateUser(Mutation):
 
     ok = graphene.Boolean()
     user = graphene.Field(lambda: User)
+    detail = graphene.String()
 
     @staticmethod
     def mutate(root, info, **user_data):
@@ -136,15 +145,12 @@ class CreateUser(Mutation):
         :param user_data: id_tag, name, email
         :return:
         """
-        user = UserModel(**user_data)
-        db.session.add(user)
-        db.session.commit()
+        detail, ok = createData(UserModel(**user_data))
         user = User(**user_data)
-        ok = True
-        return CreateUser(user=user, ok=ok)
+        return CreateUser(user=user, ok=ok, detail=detail)
 
 
-class CreateNaire(Mutation):
+class CreateQnaire(Mutation):
     class Arguments:
         name = graphene.String(required=True)
         detail = graphene.String()
@@ -165,12 +171,9 @@ class CreateNaire(Mutation):
         :param qnaire_data: name, detail, deadline, form, is_anonymous, creator_id
         :return:
         """
-        qnaire = QnaireModel(**qnaire_data)
-        db.session.add(qnaire)
-        db.session.commit()
+        detail, ok = createData(QnaireModel(**qnaire_data))
         qnaire = Qnaire(**qnaire_data)
-        ok = True
-        return CreateNaire(qnaire=qnaire, ok=ok)
+        return CreateQnaire(qnaire=qnaire, ok=ok, detail=detail)
 
 
 class JoinEvent(Mutation):
@@ -181,6 +184,7 @@ class JoinEvent(Mutation):
 
     ok = graphene.Boolean()
     participate = graphene.Field(lambda: Participate)
+    detail = graphene.String()
 
     @staticmethod
     def mutate(root, info, **participate_data):
@@ -191,31 +195,28 @@ class JoinEvent(Mutation):
         :param participate_data: event_id, user_id, form
         :return:
         """
-        participate = ParticipateModel(**participate_data)
-        db.session.add(participate)
-        db.session.commit()
+        detail, ok = createData(ParticipateModel(**participate_data))
         participate = Participate(**participate_data)
-        return JoinEvent(participate=participate, ok=True)
+        return JoinEvent(participate=participate, ok=ok, detail=detail)
 
 
-class AnonymousAnswerNaire(Mutation):
+class AnonymousAnswerQnaire(Mutation):
     class Arguments:
         naire_id = graphene.Int(required=True)
         answer = graphene.JSONString(required=True)
 
     ok = graphene.Boolean()
     answer = graphene.Field(lambda: AnonymousAnswer)
+    detail = graphene.String()
 
     @staticmethod
     def mutate(root, info, **answer_data):
-        answer = AnonymousAnswerModel(**answer_data)
-        db.session.add(answer)
-        db.session.commit()
+        detail, ok = createData(AnonymousAnswerModel(**answer_data))
         answer = AnonymousAnswer(**answer_data)
-        return AnonymousAnswerNaire(ok=True, answer=answer)
+        return AnonymousAnswerQnaire(ok=ok, answer=answer, detail=detail)
 
 
-class AnswerNaire(Mutation):
+class AnswerQnaire(Mutation):
     class Arguments:
         naire_id = graphene.Int(required=True)
         answer = graphene.JSONString(required=True)
@@ -223,14 +224,13 @@ class AnswerNaire(Mutation):
 
     ok = graphene.Boolean()
     answer = graphene.Field(lambda: Answer)
+    detail = graphene.String()
 
     @staticmethod
     def mutate(root, info, **answer_data):
-        answer = AnswerModel(**answer_data)
-        db.session.add(answer)
-        db.session.commit()
+        detail, ok = createData(AnswerModel(**answer_data))
         answer = Answer(**answer_data)
-        return AnswerNaire(ok=True, answer=answer)
+        return AnswerQnaire(ok=ok, answer=answer, detail=detail)
 
 
 def updateData(curr, data: dict):
@@ -246,8 +246,12 @@ def updateData(curr, data: dict):
         return True, curr
     for i in data:
         setattr(curr, i, data[i])
-    db.session.commit()
-    return True
+    try:
+        db.session.commit()
+    except located_error.GraphQLLocatedError as e:
+        return e.message, False
+    else:
+        return "success", True
 
 
 # TODO: Update Mutation
@@ -260,13 +264,14 @@ class UpdateUser(Mutation):
 
     ok = graphene.Boolean()
     user = graphene.Field(lambda: User)
+    detail = graphene.String()
 
     @staticmethod
     def mutate(root, info, id, **data):
         curr_user = db.session.query(UserModel).filter_by(id=id).first_or_404()
-        res = updateData(curr_user, data)
+        detail, ok = updateData(curr_user, data)
         curr_user = User(**data)
-        return UpdateUser(ok=res, user=curr_user)
+        return UpdateUser(ok=ok, user=curr_user, detail=detail)
 
 
 class UpdateEvent(Mutation):
@@ -280,16 +285,17 @@ class UpdateEvent(Mutation):
 
     ok = graphene.Boolean()
     event = graphene.Field(lambda: Event)
+    detail = graphene.String()
 
     @staticmethod
     def mutate(root, info, id, **data):
         curr_event = db.session.query(EventModel).filter_by(id=id).first_or_404()
-        res = updateData(curr_event, data)
+        detail, ok = updateData(curr_event, data)
         curr_event = Event(**data)
-        return UpdateEvent(ok=res, event=curr_event)
+        return UpdateEvent(ok=ok, event=curr_event, detail=detail)
 
 
-class UpdateNaire(Mutation):
+class UpdateQnaire(Mutation):
     class Arguments:
         id = graphene.ID(required=True)
         name = graphene.String()
@@ -300,13 +306,14 @@ class UpdateNaire(Mutation):
 
     ok = graphene.Boolean()
     event = graphene.Field(lambda: Event)
+    detail = graphene.String()
 
     @staticmethod
     def mutate(root, info, id, **data):
         curr_naire = db.session.query(EventModel).filter_by(id=id).first_or_404()
-        res = updateData(curr_naire, data)
+        detail, ok = updateData(curr_naire, data)
         curr_naire = Qnaire(**data)
-        return UpdateNaire(ok=res, event=curr_naire)
+        return UpdateQnaire(event=curr_naire, ok=ok, detail=detail)
 
 
 class UpdateParticipate(Mutation):
@@ -317,6 +324,7 @@ class UpdateParticipate(Mutation):
 
     ok = graphene.Boolean()
     participate = graphene.Field(lambda: Participate)
+    detail = graphene.String()
 
     @staticmethod
     def mutate(root, info, user_id, event_id, join_data):
@@ -325,9 +333,14 @@ class UpdateParticipate(Mutation):
         if curr is None:
             return UpdateParticipate(ok=False, curr=None)
         curr.join_data = join_data
-        db.session.commit()
+        try:
+            db.session.commit()
+        except located_error.GraphQLLocatedError as e:
+            detail, ok = e.message, False
+        else:
+            detail, ok = "success", True
         curr = Participate(user_id=user_id, event_id=event_id, join_data=join_data)
-        return UpdateParticipate(ok=True, participate=curr)
+        return UpdateParticipate(ok=ok, detail=detail, participate=curr)
 
 
 class UpdateAnswer(Mutation):
@@ -346,16 +359,28 @@ class UpdateAnswer(Mutation):
         if curr is None:
             return UpdateAnswer(ok=False, curr=None)
         curr.answer_data = answer_data
-        db.session.commit()
+        try:
+            db.session.commit()
+        except located_error.GraphQLLocatedError as e:
+            detail, ok = e.message, False
+        else:
+            detail, ok = "success", True
         curr = Answer(user_id=user_id, qnaire_id=qnaire_id, answer_data=answer_data)
-        return UpdateAnswer(ok=True, answer=curr)
+        return UpdateAnswer(ok=ok, detail=detail, answer=curr)
 
 
 class DBMutation(ObjectType):
     create_event = CreateEvent.Field()
     create_user = CreateUser.Field()
-    create_naire = CreateNaire.Field()
+    create_qnaire = CreateQnaire.Field()
     join_event = JoinEvent.Field()
+    anonymous_answer_qnaire = AnonymousAnswerQnaire.Field()
+    answer_qnaire = AnswerQnaire.Field()
+    update_user = UpdateUser.Field()
+    update_event = UpdateEvent.Field()
+    update_qnaire = UpdateQnaire.Field()
+    update_participate = UpdateParticipate.Field()
+    update_answer = UpdateAnswer.Field()
 
 
 schema = Schema(query=Query, mutation=DBMutation)

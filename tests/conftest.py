@@ -11,15 +11,15 @@ def app():
         "SQLALCHEMY_DATABASE_URI": "mysql+mysqldb://root:sumsc666@wzhzzmzzy.xyz:33306/eform",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False
     })
+    db.init_app(app)
 
-    db.create_all(app=app)
     yield app
 
-    db.session.execute("drop table anonymous_answer")
-    db.session.execute("drop table answer")
-    db.session.execute("drop table participate")
-    db.session.execute("drop table event")
-    db.session.execute("drop table qnaire")
-    db.session.execute("drop table user")
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
 
-# TODO: Fix this fixture
+
+@pytest.fixture
+def client(app):
+    return app.test_client()
