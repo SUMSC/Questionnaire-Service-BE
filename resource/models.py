@@ -13,7 +13,7 @@ Base.query = db.session.query_property()
 class User(Base):
     __tablename__ = "user"
     id = Column(INT, primary_key=True, comment="自增主键")
-    id_tag = Column(VARCHAR(16), nullable=False, comment="学号")
+    id_tag = Column(VARCHAR(16), nullable=False, unique=True, comment="学号")
     name = Column(VARCHAR(12), nullable=False, comment="用户姓名")
 
 
@@ -67,15 +67,23 @@ class Qnaire(Base):
 class AnonymousAnswer(Base):
     __tablename__ = "anonymous_answer"
     id = Column(INT, primary_key=True, comment="自增主键")
-    answer_data = Column(JSON, nullable=False, comment="答卷，JSONString")
-    qnaire_id = Column(INT, nullable=False, comment="所属问卷")
+    answer = Column(JSON, nullable=False, comment="答卷，JSONString")
+    qnaire_id = Column(INT, ForeignKey("qnaire.id"), nullable=False, comment="所属问卷")
+    qnaire = relationship(
+        Qnaire,
+        backref=backref("anonymous_answer_to", uselist=True)
+    )
 
 
 class Answer(Base):
     __tablename__ = "answer"
     id = Column(INT, primary_key=True, comment="自增主键")
-    answer_data = Column(JSON, nullable=False, comment="答卷，JSONString")
-    qnaire_id = Column(INT, nullable=False, comment="所属问卷")
+    answer = Column(JSON, nullable=False, comment="答卷，JSONString")
+    qnaire_id = Column(INT, ForeignKey("qnaire.id"), nullable=False, comment="所属问卷")
+    qnaire = relationship(
+        Qnaire,
+        backref=backref("answer_to", uselist=True)
+    )
     user_id = Column(INT, ForeignKey("user.id"), comment="答卷者")
     user = relationship(
         User,
