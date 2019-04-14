@@ -1,7 +1,8 @@
 import os
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_graphql import GraphQLView
+from werkzeug.utils import secure_filename
 from .models import db
 from .schema import schema
 
@@ -16,6 +17,19 @@ def create_app(test_conf=None):
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['SQLALCHEMY_POOL_RECYCLE'] = 5
         db.init_app(app)
+
+    @app.route('/upload', methods=['POST'])
+    def upload_file():
+        file = request.files.get('file')
+        if file is None or file.filename == '':
+            return jsonify({"ok": False, "detail": "no file"})
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify({"ok": True, "detail": "filename"})
+
+    @app.route('/files/<filename>')
+    def get_file(filename):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
     app.add_url_rule(
         '/',
