@@ -40,36 +40,74 @@ class Answer(SQLAlchemyObjectType):
         model = AnswerModel
 
 
-# TODO: 添加 Query
 class Query(ObjectType):
-    event = graphene.Field(Event)
-    events = graphene.List(Event)
-    user = graphene.Field(User, id=graphene.Int(required=True))
-    users = graphene.List(User)
-    participate = graphene.Field(Participate)
-    participates = graphene.List(Participate)
-    qnaire = graphene.Field(Qnaire)
-    qnaires = graphene.List(Qnaire)
-    anonymous_answer = graphene.Field(AnonymousAnswer)
-    anonymous_answers = graphene.List(AnonymousAnswer)
+    event = graphene.List(
+        Event,
+        id=graphene.Int(),
+        name=graphene.String(),
+        detail=graphene.String(),
+        creator_id=graphene.Int(),
+        _active=graphene.Boolean()
+    )
+    user = graphene.List(
+        User,
+        id=graphene.Int(),
+        id_tag=graphene.String(),
+        name=graphene.String()
+    )
+    participate = graphene.List(
+        Participate,
+        event_id=graphene.Int(),
+        user_id=graphene.Int()
+    )
+    qnaire = graphene.List(
+        Qnaire,
+        id=graphene.Int(),
+        name=graphene.String(),
+        detail=graphene.String(),
+        is_anonymous=graphene.String(),
+        creator_id=graphene.Int()
+    )
+    anonymous_answer = graphene.List(
+        AnonymousAnswer,
+        id=graphene.Int(),
+        qnaire_id=graphene.Int()
+    )
+    answer = graphene.List(
+        Answer,
+        id=graphene.Int(),
+        qnaire_id=graphene.Int(),
+        user_id=graphene.Int()
+    )
 
-    def resolve_user(self, info, id):
-        return db.session.query(UserModel).filter_by(id=id).first()
+    @staticmethod
+    def resolve_user(info, **kwargs):
+        return db.session.query(UserModel).filter_by(**kwargs).all()
 
-    def resolve_users(self, info):
-        return db.session.query(UserModel).all()
+    @staticmethod
+    def resolve_event(info, **kwargs):
+        return db.session.query(EventModel).filter_by(**kwargs).all()
 
-    def resolve_events(self, info):
-        return db.session.query(EventModel).all()
+    @staticmethod
+    def resolve_participate(info, **kwargs):
+        return db.session.query(ParticipateModel).filter_by(**kwargs).all()
 
-    def resolve_event(self, info, id):
-        return db.session.query(EventModel).filter_by(id=id).first()
+    @staticmethod
+    def resolve_qnaire(info, **kwargs):
+        return db.session.query(QnaireModel).filter_by(**kwargs).all()
+
+    @staticmethod
+    def resolve_anonymous_answer(info, **kwargs):
+        return db.session.query(AnonymousAnswerModel).filter_by(**kwargs).all()
+
+    @staticmethod
+    def resolve_answer(info, **kwargs):
+        return db.session.query(AnswerModel).filter_by(**kwargs).all()
 
 
 def createData(model, data):
     new_field = model(**data)
     current_app.logger.debug("Create {}: ".format(str(model)) + str(data))
-    print("Create {}: ".format(str(model)) + str(data))
     db.session.add(new_field)
     try:
         db.session.commit()
@@ -85,6 +123,10 @@ def createData(model, data):
 #       WARNING：Data Existed
 #       ERROR：Create Error
 class CreateEvent(Mutation):
+    ok = graphene.Boolean()
+    event = graphene.Field(lambda: Event)
+    message = graphene.String()
+
     class Arguments:
         name = graphene.String(required=True)
         detail = graphene.String(required=True)
@@ -93,10 +135,6 @@ class CreateEvent(Mutation):
         start_time = graphene.DateTime(required=True)
         deadline = graphene.DateTime(required=True)
 
-    ok = graphene.Boolean()
-    event = graphene.Field(lambda: Event)
-    message = graphene.String()
-
     @staticmethod
     def mutate(root, info, **event_data):
         event, message, ok = createData(EventModel, event_data)
@@ -104,13 +142,13 @@ class CreateEvent(Mutation):
 
 
 class CreateUser(Mutation):
-    class Arguments:
-        id_tag = graphene.ID(required=True)
-        name = graphene.String(required=True)
-
     ok = graphene.Boolean()
     user = graphene.Field(lambda: User)
     message = graphene.String()
+
+    class Arguments:
+        id_tag = graphene.ID(required=True)
+        name = graphene.String(required=True)
 
     @staticmethod
     def mutate(root, info, **user_data):

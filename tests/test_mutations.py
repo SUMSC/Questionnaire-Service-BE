@@ -117,7 +117,7 @@ def test_create_qnaire(client):
     res = res.get_json()
     assert res['data']
     assert res['data']['createQnaire']['ok']
-    assert res['data']['createQnaire']['qnaire']['id'] == 1
+    assert res['data']['createQnaire']['qnaire']['id'] == '1'
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -136,6 +136,7 @@ def test_create_anonymous_qnaire(client):
         ok
         message
         qnaire {
+          id
           name
           creator {
             name
@@ -147,8 +148,10 @@ def test_create_anonymous_qnaire(client):
         variables={}
     ))
     res = res.get_json()
+    print(res)
     assert res['data']
     assert res['data']['createQnaire']['ok']
+    assert res['data']['createQnaire']['qnaire']['id'] == '2'
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -180,12 +183,13 @@ def test_anonymous_answer(client):
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_answer(client):
+    # 创建实名问卷
     res = client.post('/', json=dict(
         query="""
     mutation answer {
       answerQnaire(
         answer: "{}",
-        qnaireId: 2,
+        qnaireId: 1,
         userId: 1
       ) {
         ok
@@ -204,16 +208,16 @@ def test_answer(client):
         variables={}
     ))
     res = res.get_json()
-    print(res)
     assert not res.get('errors')
     assert res['data']['answerQnaire']['ok']
-    assert res['data']['answerQnaire']['answer']['qnaire']['name'] == "测试问卷 - 匿名"
+    assert res['data']['answerQnaire']['answer']['qnaire']['name'] == "测试问卷"
+    # 再次创建问卷，应当失败
     res = client.post('/', json=dict(
         query="""
     mutation answer {
       answerQnaire(
         answer: "{}",
-        qnaireId: 2,
+        qnaireId: 1,
         userId: 1
       ) {
         ok
@@ -244,6 +248,7 @@ def test_update_user(client):
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_update_event(client):
+    # 更新活动数据
     res = client.post("/", json=dict(
         query="""
     mutation updateEvent {
@@ -269,6 +274,7 @@ def test_update_event(client):
     res = res.get_json()
     assert not res.get('errors')
     assert res['data']['updateEvent']['ok']
+    # 更新不存在的活动，应当失败，返回 cannot found
     res = client.post("/", json=dict(
         query="""
         mutation updateEvent {
@@ -388,9 +394,9 @@ def test_update_answer(client):
     assert res['data']['updateAnswer']['answer']['user']['name'] == '测试用户'
 
 
-# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-# def test_clear_env(app):
-#     db.init_app(app)
-#     with app.app_context():
-#         db.drop_all()
-#         db.create_all()
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_clear_env(app):
+    db.init_app(app)
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
