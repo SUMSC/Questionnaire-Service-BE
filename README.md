@@ -39,9 +39,17 @@
     - 报名参加的活动：查看报名参加过的活动信息，修改填写的报名表；
     - 发布过的问卷：查看发布过的问卷，下载已经填写的问卷。
 
+### 需求待解决问题
+
+- 用户权限是否需要用 RBAC 进行控制？
+- 文件上传如何实现？
+- Elastic Search如何对接？
+- 分页问题不适用 Relay 是否有更好的解决方案？
+
+
 ## 数据存储设计
 
-数据库：PostgreSQL 11
+数据库：PostgreSQL 10
 
 ### 表
 
@@ -71,11 +79,13 @@
     - `creator_id`: `INT`, `Foreign Key`, 创建者ID
     - `is_anonymous`: `BOOLEAN`, 问卷是否匿名
     - `_active`: `BOOLEAN`, 问卷是否还可以填写
-- `answer`: 实名答卷表
+- `answer`: 实名答卷表 
+    -`id`: `INT`, `Primary Key`, 自增主键
     - `answer_data`: `JSON`, 用户填写的问卷
     - `user_id`: `INT`, 填写人
     - `qnaire_id`: `INT`, 问卷ID
 - `AnonymousAnswer`: 匿名答卷表
+    - `id`: `INT`, `Primary Key`, 自增主键
     - `answer_data`: `JSON`, 用户填写的问卷
     - `qnaire_id`: `INT`, 问卷ID
 
