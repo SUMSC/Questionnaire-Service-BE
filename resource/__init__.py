@@ -16,10 +16,12 @@ def create_app(test_conf=None):
         app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql+psycopg2://sumsc:sumsc666@192.168.2.101:55432/eform"
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['SQLALCHEMY_POOL_RECYCLE'] = 5
+        app.config['UPLOAD_FOLDER'] = "upload"
         db.init_app(app)
 
     @app.route('/upload', methods=['POST'])
     def upload_file():
+        print(request.files)
         file = request.files.get('file')
         if file is None or file.filename == '':
             return jsonify({"ok": False, "detail": "no file"})
