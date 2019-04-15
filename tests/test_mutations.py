@@ -1,6 +1,7 @@
 from resource.models import db
 import pytest
 
+
 # TODO: 添加注释
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_user(client):
@@ -183,9 +184,7 @@ def test_anonymous_answer(client):
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_answer(client):
-    # 创建实名问卷
-    res = client.post('/', json=dict(
-        query="""
+    query = """
     mutation answer {
       answerQnaire(
         answer: "{}",
@@ -204,38 +203,20 @@ def test_answer(client):
         }
       }
     }
-    """,
+        """
+    # 创建实名问卷
+    res = client.post('/', json=dict(
+        query=query,
         variables={}
-    ))
-    res = res.get_json()
+    )).get_json()
     assert not res.get('errors')
     assert res['data']['answerQnaire']['ok']
     assert res['data']['answerQnaire']['answer']['qnaire']['name'] == "测试问卷"
     # 再次创建问卷，应当失败
     res = client.post('/', json=dict(
-        query="""
-    mutation answer {
-      answerQnaire(
-        answer: "{}",
-        qnaireId: 1,
-        userId: 1
-      ) {
-        ok
-        message
-        answer {
-          qnaire {
-            name
-          }
-          user {
-            name
-          }
-        }
-      }
-    }
-        """,
+        query=query,
         variables={}
-    ))
-    res = res.get_json()
+    )).get_json()
     assert not res.get('errors')
     assert not res['data']['answerQnaire']['ok']
 
@@ -395,7 +376,7 @@ def test_update_answer(client):
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_clear_env(app):
+def test_clear(app):
     db.init_app(app)
     with app.app_context():
         db.drop_all()

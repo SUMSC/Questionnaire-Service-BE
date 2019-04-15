@@ -12,11 +12,7 @@ def app():
         "SQLALCHEMY_TRACK_MODIFICATIONS": False
     })
     db.init_app(app)
-
     yield app
-
-
-
 
 @pytest.fixture
 def client(app):

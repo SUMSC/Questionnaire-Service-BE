@@ -81,27 +81,27 @@ class Query(ObjectType):
     )
 
     @staticmethod
-    def resolve_user(info, **kwargs):
+    def resolve_user(root, info, **kwargs):
         return db.session.query(UserModel).filter_by(**kwargs).all()
 
     @staticmethod
-    def resolve_event(info, **kwargs):
+    def resolve_event(root, info, **kwargs):
         return db.session.query(EventModel).filter_by(**kwargs).all()
 
     @staticmethod
-    def resolve_participate(info, **kwargs):
+    def resolve_participate(root, info, **kwargs):
         return db.session.query(ParticipateModel).filter_by(**kwargs).all()
 
     @staticmethod
-    def resolve_qnaire(info, **kwargs):
+    def resolve_qnaire(root, info, **kwargs):
         return db.session.query(QnaireModel).filter_by(**kwargs).all()
 
     @staticmethod
-    def resolve_anonymous_answer(info, **kwargs):
+    def resolve_anonymous_answer(root, info, **kwargs):
         return db.session.query(AnonymousAnswerModel).filter_by(**kwargs).all()
 
     @staticmethod
-    def resolve_answer(info, **kwargs):
+    def resolve_answer(root, info, **kwargs):
         return db.session.query(AnswerModel).filter_by(**kwargs).all()
 
 
