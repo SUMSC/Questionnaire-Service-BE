@@ -45,15 +45,13 @@ class Query(ObjectType):
         Event,
         id=graphene.Int(),
         name=graphene.String(),
-        detail=graphene.String(),
         creator_id=graphene.Int(),
         _active=graphene.Boolean()
     )
     user = graphene.List(
         User,
         id=graphene.Int(),
-        id_tag=graphene.String(),
-        name=graphene.String()
+        id_tag=graphene.String()
     )
     participate = graphene.List(
         Participate,
@@ -64,7 +62,6 @@ class Query(ObjectType):
         Qnaire,
         id=graphene.Int(),
         name=graphene.String(),
-        detail=graphene.String(),
         is_anonymous=graphene.String(),
         creator_id=graphene.Int()
     )

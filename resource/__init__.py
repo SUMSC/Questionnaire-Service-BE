@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_graphql import GraphQLView
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from .models import db
 from .schema import schema
@@ -9,6 +10,7 @@ from .schema import schema
 
 def create_app(test_conf=None):
     app = Flask(__name__, instance_relative_config=True)
+    CORS(app, resources={r"/": {"origins": "*"}})
     if test_conf:
         for i in test_conf:
             app.config[i] = test_conf[i]
@@ -27,7 +29,7 @@ def create_app(test_conf=None):
             return jsonify({"ok": False, "detail": "no file"})
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return jsonify({"ok": True, "detail": "filename"})
+        return jsonify({"ok": True, "detail": filename})
 
     @app.route('/files/<filename>')
     def get_file(filename):

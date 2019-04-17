@@ -47,6 +47,15 @@
 - 分页问题不适用 Relay 是否有更好的解决方案？
 
 
+## Auth Service
+
+### Web 用例解析
+
+- 用户在网页上点击登录
+- 用户输入 Username、Password
+- webLogin(u, p)
+- 
+
 ## 数据存储设计
 
 数据库：PostgreSQL 10
@@ -127,3 +136,4 @@
 ### Zombodb
 
 用于将PG数据导入elastic
+
