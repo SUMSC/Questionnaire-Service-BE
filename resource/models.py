@@ -26,9 +26,10 @@ class Event(Base):
     form = Column(JSON, nullable=False, comment="活动报名表单")
     start_time = Column(TIMESTAMP, nullable=False, comment="活动开始时间")
     deadline = Column(TIMESTAMP, nullable=False, comment="报名截止时间")
+    create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
     creator = relationship(
         User,
-        backref=backref("event_creator", uselist=True)
+        backref=backref("my_event", uselist=True)
     )
     _active = Column(BOOLEAN, nullable=False, default=True, comment="活动当前是否可以报名")
 
@@ -38,14 +39,21 @@ class Participate(Base):
     event_id = Column(INT, ForeignKey("event.id"), primary_key=True, comment="所加入的活动")
     event = relationship(
         Event,
-        backref=backref("where", uselist=True)
+        backref=backref("participant", uselist=True)
     )
     user_id = Column(INT, ForeignKey("user.id"), primary_key=True, comment="加入活动的用户")
     user = relationship(
         User,
-        backref=backref("who", uselist=True)
+        backref=backref("my_participation", uselist=True)
     )
     join_data = Column(JSON, nullable=False, comment="报名表")
+    create_time = Column(
+        TIMESTAMP,
+        nullable=False,
+        comment="此项创建时间",
+        default=datetime.now,
+        onupdate=datetime.now
+    )
 
 
 class Qnaire(Base):
@@ -57,9 +65,10 @@ class Qnaire(Base):
     form = Column(JSON, nullable=False, comment="问卷表单样式，JSONString")
     is_anonymous = Column(BOOLEAN, nullable=False, comment="是否为匿名问卷，匿名问卷不需要登陆即可填写，非匿名问卷填写后可以修改")
     creator_id = Column(INT, ForeignKey("user.id"), nullable=False)
+    create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
     creator = relationship(
         User,
-        backref=backref("qnaire_creator", uselist=True)
+        backref=backref("my_qnaire", uselist=True)
     )
     _active = Column(BOOLEAN, nullable=False, default=True, comment="FLAG值，问卷是否处于活动中")
 
@@ -71,8 +80,9 @@ class AnonymousAnswer(Base):
     qnaire_id = Column(INT, ForeignKey("qnaire.id"), nullable=False, comment="所属问卷")
     qnaire = relationship(
         Qnaire,
-        backref=backref("anonymous_answer_to", uselist=True)
+        backref=backref("anonymous_answer", uselist=True)
     )
+    create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
 
 
 class Answer(Base):
@@ -82,10 +92,17 @@ class Answer(Base):
     qnaire_id = Column(INT, ForeignKey("qnaire.id"), nullable=False, comment="所属问卷")
     qnaire = relationship(
         Qnaire,
-        backref=backref("answer_to", uselist=True)
+        backref=backref("answer", uselist=True)
     )
     user_id = Column(INT, ForeignKey("user.id"), comment="答卷者")
     user = relationship(
         User,
-        backref=backref("user", uselist=True)
+        backref=backref("my_answer", uselist=True)
+    )
+    create_time = Column(
+        TIMESTAMP,
+        nullable=False,
+        comment="此项创建时间",
+        default=datetime.now,
+        onupdate=datetime.now
     )

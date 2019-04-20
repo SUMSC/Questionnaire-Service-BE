@@ -2,6 +2,7 @@ from graphene import Schema
 import graphene
 
 from flask import current_app
+from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from graphene import Mutation, ObjectType
 from graphene_sqlalchemy import SQLAlchemyObjectType
@@ -231,6 +232,7 @@ class AnswerQnaire(Mutation):
         return AnswerQnaire(ok=ok, answer=answer, message=message)
 
 
+# TODO: Fix The Fxxking ZomboDB
 def updateDataById(model, id, data):
     """
     Update sth
@@ -243,8 +245,7 @@ def updateDataById(model, id, data):
         return curr, "cannot found", False
     if len(list(filter(lambda x: x[1] is not None, data.items()))) == 0:
         return curr, "nothing to update", False
-    for i in data:
-        setattr(curr, i, data[i])
+    db.session.execute(model.__table__.update().where(model.__table__.c.id == id).values(**data))
     try:
         db.session.commit()
     except IntegrityError as e:

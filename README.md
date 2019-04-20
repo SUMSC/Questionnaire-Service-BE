@@ -127,7 +127,17 @@
 
 ### Elastic Stack
 
-用于提供数据库搜索API以及日志分析监控
+用于提供数据库搜索API以及日志分析监控。
+
+#### 使用方法
+
+[RESTful API](https://www.elastic.co/guide/index.html)
+
+>  **重置数据库及 ELK INDEX 方法**:
+> - `进入`Kibana/Management`，删除索引` ，
+> - `flask shell > db.drop_all(); db.create_all()`，
+> - 执行`create_index.sql`，
+> - 修改`test`配置，执行`pytest`。
 
 ### Kong
 

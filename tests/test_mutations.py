@@ -9,7 +9,7 @@ def test_create_user(client):
         query="""
     mutation testUser {
       createUser(
-        idTag: "123456", 
+        idTag: "123456",
         name: "测试用户"
       ) {
         user {
@@ -30,11 +30,11 @@ def test_create_event(client):
         query="""
     mutation testEvent {
       createEvent(
-        name: "测试活动", 
-        detail: "测试数据", 
-        deadline: "2004-05-03T17:30:08+08:00", 
-        creatorId: 1, 
-        form: "{}", 
+        name: "测试活动",
+        detail: "测试数据",
+        deadline: "2004-05-03T17:30:08+08:00",
+        creatorId: 1,
+        form: "{}",
         startTime: "2004-05-03T17:30:08+08:00"
       ) {
         ok
@@ -235,10 +235,10 @@ def test_update_event(client):
     mutation updateEvent {
       updateEvent(
         id: 1,
-        name: "测试活动", 
-        detail: "测试数据", 
-        deadline: "2004-05-03T17:30:08+08:00", 
-        form: "{}", 
+        name: "测试活动",
+        detail: "测试数据",
+        deadline: "2004-05-03T17:30:08+08:00",
+        form: "{}",
         startTime: "2004-05-03T17:30:08+08:00"
       ) {
         ok
@@ -261,10 +261,10 @@ def test_update_event(client):
         mutation updateEvent {
           updateEvent(
             id: 2,
-            name: "测试活动", 
-            detail: "测试数据", 
-            deadline: "2004-05-03T17:30:08+08:00", 
-            form: "{}", 
+            name: "测试活动",
+            detail: "测试数据",
+            deadline: "2004-05-03T17:30:08+08:00",
+            form: "{}",
             startTime: "2004-05-03T17:30:08+08:00"
           ) {
             ok
@@ -291,9 +291,9 @@ def test_update_qnaire(client):
     mutation updateQnaire {
       updateQnaire(
         id: 1,
-        name: "测试问卷", 
-        detail: "测试数据", 
-        deadline: "2004-05-03T17:30:08+08:00", 
+        name: "测试问卷",
+        detail: "测试数据",
+        deadline: "2004-05-03T17:30:08+08:00",
         form: "{}"
       ) {
         ok
@@ -375,9 +375,9 @@ def test_update_answer(client):
     assert res['data']['updateAnswer']['answer']['user']['name'] == '测试用户'
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_clear(app):
-    db.init_app(app)
-    with app.app_context():
-        db.drop_all()
-        db.create_all()
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# def test_clear(app):
+#     db.init_app(app)
+#     with app.app_context():
+#         db.drop_all()
+#         db.create_all()
