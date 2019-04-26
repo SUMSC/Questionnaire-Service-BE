@@ -117,6 +117,24 @@
 - UpdateEvent: 更新活动
 - UpdateParticipation: 更新报名信息
 
+### RESTful API
+
+#### method
+
+- GET
+- POST
+- PUT
+- DELETE
+
+#### entry
+
+- /user
+- /event
+- /qnaire
+- /anonymous_qnaire
+- /answer
+- /anonymous_answer
+
 ## 基础设施
 
 > 目前部署仅支持Docker-compose
@@ -147,3 +165,8 @@
 
 用于将PG数据导入elastic
 
+## 表单格式文档
+
+- 表单种类见：`表单种类.md`，
+- 表单格式见：`表单格式.json`，
+- 答案格式见：`答案格式.json`。

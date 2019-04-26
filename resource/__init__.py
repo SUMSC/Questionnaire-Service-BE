@@ -6,10 +6,12 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from .models import db
 from .schema import schema
+from .restful import api
 
 
 def create_app(test_conf=None):
     app = Flask(__name__, instance_relative_config=True)
+    app.register_blueprint(api)
     CORS(app, resources={r"/": {"origins": "*"}})
     if test_conf:
         for i in test_conf:
@@ -34,6 +36,32 @@ def create_app(test_conf=None):
     @app.route('/files/<filename>')
     def get_file(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+    @app.route('/build_index')
+    def build_index_pg():
+        """
+        重建 ZomboDB 索引，用于测试
+        :return:
+        """
+        db.session.execute("""
+        CREATE INDEX idxqnaire ON qnaire USING zombodb ((qnaire.*)) WITH (url='elasticsearch:9200/', alias='qnaire');
+        CREATE INDEX idxevent ON event USING zombodb ((event.*)) WITH (url='elasticsearch:9200/', alias='event');
+        """)
+        db.session.commit()
+        return "build success"
+
+    @app.route('/reindex')
+    def reindex_pg():
+        """
+        Reindex ZomboDB，用于定时脚本访问，清除无效数据
+        :return:
+        """
+        db.session.execute("""
+        REINDEX INDEX idxevent;
+        REINDEX INDEX idxqnaire;
+        """)
+        db.session.commit()
+        return "success"
 
     app.add_url_rule(
         '/',

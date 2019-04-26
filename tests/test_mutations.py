@@ -1,10 +1,16 @@
 from resource.models import db
 import pytest
+import json
 
 
 # TODO: 添加注释
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_user(client):
+    """
+    创建两个测试用户
+    :param client:
+    :return:
+    """
     res = client.post('/', json=dict(
         query="""
     mutation testUser {
@@ -22,10 +28,30 @@ def test_create_user(client):
         variables={}))
     res = res.get_json()
     assert res['data']['createUser']['ok']
+    res = client.post('/', json=dict(
+        query="""
+    mutation testUser {
+      createUser(
+        idTag: "123457",
+        name: "测试用户2"
+      ) {
+        user {
+          name
+        }
+        ok
+        message
+      }
+    }""",
+        variables={}))
+    res = res.get_json()
+    assert res['data']['createUser']['ok']
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_event(client):
+    with open("tests/test_form.json", encoding='utf8') as f:
+        form = json.loads(f.read())
+        form = json.dumps(form).replace("\"", "\\\"")
     res = client.post('/', json=dict(
         query="""
     mutation testEvent {
@@ -34,41 +60,64 @@ def test_create_event(client):
         detail: "测试数据",
         deadline: "2004-05-03T17:30:08+08:00",
         creatorId: 1,
-        form: "{}",
+        form: "%s",
         startTime: "2004-05-03T17:30:08+08:00"
       ) {
         ok
         event {
-          name
-          detail
           creator {
             name
           }
         }
-        message
       }
     }
-    """,
+    """ % form,
+        variables={}))
+    res = res.get_json()
+    print(res)
+    assert res['data']['createEvent']['ok']
+    assert res['data']['createEvent']['event']['creator']['name'] == '测试用户'
+    res = client.post('/', json=dict(
+        query="""
+    mutation testEvent {
+      createEvent(
+        name: "测试活动2",
+        detail: "测试数据",
+        deadline: "2008-01-01T17:30:08+08:00",
+        creatorId: 2,
+        form: "%s",
+        startTime: "2004-05-03T17:30:08+08:00"
+      ) {
+        ok
+        event {
+          creator {
+            name
+          }
+        }
+      }
+    }
+    """ % form,
         variables={}))
     res = res.get_json()
     assert res['data']['createEvent']['ok']
-    assert res['data']['createEvent']['event']['creator']['name'] == '测试用户'
+    assert res['data']['createEvent']['event']['creator']['name'] == '测试用户2'
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_join_event(client):
-    res = client.post('/', json=dict(
-        query="""
+    with open("tests/test_answer.json", encoding='utf8') as f:
+        answer = json.dumps(json.loads(f.read())).replace('"', '\\"')
+        query = """
     mutation joinEvent{
       joinEvent(
-        eventId: 1,
+        eventId: 2,
         userId: 1,
-        joinData: "{}"
+        answer: "%s"
       ) {
         ok
         message
         participate {
-          joinData
+          answer
           user {
             name
           }
@@ -78,14 +127,18 @@ def test_join_event(client):
         }
       }
     }
-    """,
+    """ % answer
+        print(query)
+    res = client.post('/', json=dict(
+        query=query,
         variables={}
     ))
     res = res.get_json()
+    print(res)
     assert res['data']
     assert res['data']['joinEvent']['ok']
     assert res['data']['joinEvent']['participate']['user']['name'] == '测试用户'
-    assert res['data']['joinEvent']['participate']['event']['name'] == '测试活动'
+    assert res['data']['joinEvent']['participate']['event']['name'] == '测试活动2'
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -95,7 +148,6 @@ def test_create_qnaire(client):
     mutation createQnaire {
       createQnaire(
         name: "测试问卷",
-        isAnonymous: false,
         form: "{}",
         detail: "测试数据",
         deadline: "2004-05-03T17:30:08+08:00",
@@ -119,6 +171,34 @@ def test_create_qnaire(client):
     assert res['data']
     assert res['data']['createQnaire']['ok']
     assert res['data']['createQnaire']['qnaire']['id'] == '1'
+    res = client.post('/', json=dict(
+        query="""
+        mutation createQnaire {
+          createQnaire(
+            name: "测试问卷2",
+            form: "{}",
+            detail: "测试数据",
+            deadline: "2004-05-03T17:30:08+08:00",
+            creatorId: 2
+          ) {
+            ok
+            message
+            qnaire {
+              id
+              name
+              creator {
+                name
+              }
+            }
+          }
+        }
+        """,
+        variables={}
+    ))
+    res = res.get_json()
+    assert res['data']
+    assert res['data']['createQnaire']['ok']
+    assert res['data']['createQnaire']['qnaire']['id'] == '2'
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -126,9 +206,8 @@ def test_create_anonymous_qnaire(client):
     res = client.post('/', json=dict(
         query="""
     mutation createAnonymousQnaire {
-      createQnaire(
+      createAnonymousQnaire(
         name: "测试问卷 - 匿名",
-        isAnonymous: true,
         form: "{}",
         detail: "测试数据",
         deadline: "2004-05-03T17:30:08+08:00",
@@ -151,8 +230,37 @@ def test_create_anonymous_qnaire(client):
     res = res.get_json()
     print(res)
     assert res['data']
-    assert res['data']['createQnaire']['ok']
-    assert res['data']['createQnaire']['qnaire']['id'] == '2'
+    assert res['data']['createAnonymousQnaire']['ok']
+    assert res['data']['createAnonymousQnaire']['qnaire']['id'] == '1'
+    res = client.post('/', json=dict(
+        query="""
+        mutation createAnonymousQnaire {
+          createAnonymousQnaire(
+            name: "测试问卷 - 匿名2",
+            form: "{}",
+            detail: "测试数据",
+            deadline: "2004-05-03T17:30:08+08:00",
+            creatorId: 2
+          ) {
+            ok
+            message
+            qnaire {
+              id
+              name
+              creator {
+                name
+              }
+            }
+          }
+        }
+        """,
+        variables={}
+    ))
+    res = res.get_json()
+    print(res)
+    assert res['data']
+    assert res['data']['createAnonymousQnaire']['ok']
+    assert res['data']['createAnonymousQnaire']['qnaire']['id'] == '2'
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -162,7 +270,7 @@ def test_anonymous_answer(client):
     mutation anonymousAnswer {
       anonymousAnswerQnaire(
         answer: "{}",
-        qnaireId: 2
+        qnaireId: 1
       ) {
         ok
         message
@@ -188,7 +296,7 @@ def test_answer(client):
     mutation answer {
       answerQnaire(
         answer: "{}",
-        qnaireId: 1,
+        qnaireId: 2,
         userId: 1
       ) {
         ok
@@ -211,7 +319,7 @@ def test_answer(client):
     )).get_json()
     assert not res.get('errors')
     assert res['data']['answerQnaire']['ok']
-    assert res['data']['answerQnaire']['answer']['qnaire']['name'] == "测试问卷"
+    assert res['data']['answerQnaire']['answer']['qnaire']['name'] == "测试问卷2"
     # 再次创建问卷，应当失败
     res = client.post('/', json=dict(
         query=query,
@@ -237,9 +345,9 @@ def test_update_event(client):
         id: 1,
         name: "测试活动",
         detail: "测试数据",
-        deadline: "2004-05-03T17:30:08+08:00",
+        deadline: "2005-05-03T17:30:08+08:00",
         form: "{}",
-        startTime: "2004-05-03T17:30:08+08:00"
+        startTime: "2005-05-03T17:30:08+08:00"
       ) {
         ok
         event {
@@ -260,7 +368,7 @@ def test_update_event(client):
         query="""
         mutation updateEvent {
           updateEvent(
-            id: 2,
+            id: 3,
             name: "测试活动",
             detail: "测试数据",
             deadline: "2004-05-03T17:30:08+08:00",
@@ -318,9 +426,9 @@ def test_update_participate(client):
         query="""
         mutation updateParticipate{
           updateParticipate(
-                eventId: 1,
+            eventId: 2,
             userId: 1,
-            joinData: "{}"
+            answer: "{}"
           ) {
             ok
             message
@@ -339,7 +447,7 @@ def test_update_participate(client):
     )).get_json()
     assert not res.get('errors')
     assert res['data']['updateParticipate']['ok']
-    assert res['data']['updateParticipate']['participate']['event']['name'] == '测试活动'
+    assert res['data']['updateParticipate']['participate']['event']['name'] == '测试活动2'
     assert res['data']['updateParticipate']['participate']['user']['name'] == '测试用户'
 
 
@@ -350,7 +458,7 @@ def test_update_answer(client):
         mutation updateAnswer{
           updateAnswer(
             userId: 1,
-            qnaireId: 1,
+            qnaireId: 2,
             answer: "{}"
           ) {
             ok
@@ -371,7 +479,7 @@ def test_update_answer(client):
     )).get_json()
     assert not res.get('errors')
     assert res['data']['updateAnswer']['ok']
-    assert res['data']['updateAnswer']['answer']['qnaire']['name'] == '测试问卷'
+    assert res['data']['updateAnswer']['answer']['qnaire']['name'] == '测试问卷2'
     assert res['data']['updateAnswer']['answer']['user']['name'] == '测试用户'
 
 

@@ -1,0 +1,78 @@
+[
+  {
+    "type": "plain",
+    "data": {
+      "label": "测试文本描述",
+      "remark": "这是备注"
+    }
+  },
+  {
+    "type": "input",
+    "data": {
+      "label": "测试文本题",
+      "validator": "email",
+      "remark": "这是备注",
+      "required": true
+    }
+  },
+  {
+    "type": "radio",
+    "data": {
+      "label": "测试单选题",
+      "options": [
+        "选项1",
+        "选项2",
+        "选项3"
+      ],
+      "remark": "这是备注",
+      "required": true
+    }
+  },
+  {
+    "type": "select",
+    "data": {
+      "label": "测试下拉题",
+      "options": [
+        "选项1",
+        "选项2",
+        "选项3",
+        "选项4",
+        "选项5"
+      ],
+      "remark": "这是备注",
+      "required": true
+    }
+  },
+  {
+    "type": "checkbox",
+    "data": {
+      "label": "测试多选题",
+      "remark": "这是备注",
+      "options": [
+        "选项1",
+        "选项2",
+        "选项3"
+      ],
+      "maxChoose": 0,
+      "other": true,
+      "required": true
+    }
+  },
+  {
+    "type": "rate",
+    "data": {
+      "label": "测试评分题",
+      "remark": "这是备注",
+      "count": 5,
+      "required": true
+    }
+  },
+  {
+    "type": "upload",
+    "data": {
+      "label": "测试上传",
+      "remark": "这是备注",
+      "required": true
+    }
+  }
+]

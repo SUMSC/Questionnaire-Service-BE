@@ -5,9 +5,16 @@ from sqlalchemy import Column, INT, VARCHAR, TEXT, TIMESTAMP, BOOLEAN, create_en
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.dialects.postgresql import JSON
 
+
+def to_dict(self):
+    return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}
+
+
 db = SQLAlchemy()
 Base = db.Model
 Base.query = db.session.query_property()
+Base.to_dict = to_dict
+Base.__repr__ = lambda self: str(self.to_dict())
 
 
 class User(Base):
@@ -46,7 +53,7 @@ class Participate(Base):
         User,
         backref=backref("my_participation", uselist=True)
     )
-    join_data = Column(JSON, nullable=False, comment="报名表")
+    answer = Column(JSON, nullable=False, comment="报名表")
     create_time = Column(
         TIMESTAMP,
         nullable=False,
@@ -63,7 +70,6 @@ class Qnaire(Base):
     detail = Column(TEXT, nullable=True, comment="问卷详细信息")
     deadline = Column(TIMESTAMP, nullable=False, comment="问卷填写截止时间")
     form = Column(JSON, nullable=False, comment="问卷表单样式，JSONString")
-    is_anonymous = Column(BOOLEAN, nullable=False, comment="是否为匿名问卷，匿名问卷不需要登陆即可填写，非匿名问卷填写后可以修改")
     creator_id = Column(INT, ForeignKey("user.id"), nullable=False)
     create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
     creator = relationship(
@@ -73,13 +79,29 @@ class Qnaire(Base):
     _active = Column(BOOLEAN, nullable=False, default=True, comment="FLAG值，问卷是否处于活动中")
 
 
+class AnonymousQnaire(Base):
+    __tablename__ = "anonymous_qnaire"
+    id = Column(INT, primary_key=True, comment="自增主键")
+    name = Column(VARCHAR(32), nullable=False, comment="问卷名称")
+    detail = Column(TEXT, nullable=True, comment="问卷详细信息")
+    deadline = Column(TIMESTAMP, nullable=False, comment="问卷填写截止时间")
+    form = Column(JSON, nullable=False, comment="问卷表单样式，JSONString")
+    creator_id = Column(INT, ForeignKey("user.id"), nullable=False)
+    create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
+    creator = relationship(
+        User,
+        backref=backref("my_anonymous_qnaire", uselist=True)
+    )
+    _active = Column(BOOLEAN, nullable=False, default=True, comment="FLAG值，问卷是否处于活动中")
+
+
 class AnonymousAnswer(Base):
     __tablename__ = "anonymous_answer"
     id = Column(INT, primary_key=True, comment="自增主键")
     answer = Column(JSON, nullable=False, comment="答卷，JSONString")
-    qnaire_id = Column(INT, ForeignKey("qnaire.id"), nullable=False, comment="所属问卷")
+    qnaire_id = Column(INT, ForeignKey("anonymous_qnaire.id"), nullable=False, comment="所属问卷")
     qnaire = relationship(
-        Qnaire,
+        AnonymousQnaire,
         backref=backref("anonymous_answer", uselist=True)
     )
     create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)

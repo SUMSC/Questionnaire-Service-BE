@@ -8,7 +8,10 @@ from graphene import Mutation, ObjectType
 from graphene_sqlalchemy import SQLAlchemyObjectType
 from .models import db, Event as EventModel, User as UserModel, \
     Participate as ParticipateModel, Qnaire as QnaireModel, AnonymousAnswer as AnonymousAnswerModel, \
-    Answer as AnswerModel
+    Answer as AnswerModel, AnonymousQnaire as AnonymousQnaireModel
+
+
+# from logging import info, debug, warn, error
 
 
 class Event(SQLAlchemyObjectType):
@@ -29,6 +32,11 @@ class Participate(SQLAlchemyObjectType):
 class Qnaire(SQLAlchemyObjectType):
     class Meta:
         model = QnaireModel
+
+
+class AnonymousQnaire(SQLAlchemyObjectType):
+    class Meta:
+        model = AnonymousQnaireModel
 
 
 class AnonymousAnswer(SQLAlchemyObjectType):
@@ -63,7 +71,12 @@ class Query(ObjectType):
         Qnaire,
         id=graphene.Int(),
         name=graphene.String(),
-        is_anonymous=graphene.String(),
+        creator_id=graphene.Int()
+    )
+    anonymous_qnaire = graphene.List(
+        AnonymousQnaire,
+        id=graphene.Int(),
+        name=graphene.String(),
         creator_id=graphene.Int()
     )
     anonymous_answer = graphene.List(
@@ -80,30 +93,42 @@ class Query(ObjectType):
 
     @staticmethod
     def resolve_user(root, info, **kwargs):
+        current_app.logger.debug("QUERY USER %s" % str(kwargs))
         return db.session.query(UserModel).filter_by(**kwargs).all()
 
     @staticmethod
     def resolve_event(root, info, **kwargs):
+        current_app.logger.debug("QUERY EVENT %s" % str(kwargs))
         return db.session.query(EventModel).filter_by(**kwargs).all()
 
     @staticmethod
     def resolve_participate(root, info, **kwargs):
+        current_app.logger.debug("QUERY PARTICIPATE %s" % str(kwargs))
         return db.session.query(ParticipateModel).filter_by(**kwargs).all()
 
     @staticmethod
     def resolve_qnaire(root, info, **kwargs):
+        current_app.logger.debug("QUERY QNAIRE %s" % str(kwargs))
         return db.session.query(QnaireModel).filter_by(**kwargs).all()
 
     @staticmethod
+    def resolve_anonymous_qnaire(root, info, **kwargs):
+        current_app.logger.debug("QUERY ANONYMOUS_QNAIRE %s" % str(kwargs))
+        return db.session.query(AnonymousQnaireModel).filter_by(**kwargs).all()
+
+    @staticmethod
     def resolve_anonymous_answer(root, info, **kwargs):
+        current_app.logger.debug("QUERY ANONYMOUS_ANSWER %s" % str(kwargs))
         return db.session.query(AnonymousAnswerModel).filter_by(**kwargs).all()
 
     @staticmethod
     def resolve_answer(root, info, **kwargs):
+        current_app.logger.debug("QUERY ANSWER %s" % str(kwargs))
         return db.session.query(AnswerModel).filter_by(**kwargs).all()
 
 
 def createData(model, data):
+    current_app.logger.debug("CREATE {} {}".format(str(model), repr(data)))
     new_field = model(**data)
     current_app.logger.debug("Create {}: ".format(str(model)) + str(data))
     db.session.add(new_field)
@@ -160,7 +185,6 @@ class CreateQnaire(Mutation):
         detail = graphene.String()
         deadline = graphene.String(required=True)
         form = graphene.JSONString(required=True)
-        is_anonymous = graphene.Boolean(required=True)
         creator_id = graphene.Int(required=True)
 
     ok = graphene.Boolean()
@@ -173,11 +197,29 @@ class CreateQnaire(Mutation):
         return CreateQnaire(qnaire=qnaire, ok=ok, message=message)
 
 
+class CreateAnonymousQnaire(Mutation):
+    class Arguments:
+        name = graphene.String(required=True)
+        detail = graphene.String()
+        deadline = graphene.String(required=True)
+        form = graphene.JSONString(required=True)
+        creator_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    qnaire = graphene.Field(lambda: AnonymousQnaire)
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, **qnaire_data):
+        qnaire, message, ok = createData(AnonymousQnaireModel, qnaire_data)
+        return CreateQnaire(qnaire=qnaire, ok=ok, message=message)
+
+
 class JoinEvent(Mutation):
     class Arguments:
         event_id = graphene.Int(required=True)
         user_id = graphene.Int(required=True)
-        join_data = graphene.JSONString(required=True)
+        answer = graphene.JSONString(required=True)
 
     ok = graphene.Boolean()
     participate = graphene.Field(lambda: Participate)
@@ -240,12 +282,14 @@ def updateDataById(model, id, data):
     :param data:
     :return:
     """
+    current_app.logger.debug("UPDATE {} {}".format(str(model), repr(data)))
     curr = db.session.query(model).filter_by(id=id).first()
     if curr is None:
         return curr, "cannot found", False
     if len(list(filter(lambda x: x[1] is not None, data.items()))) == 0:
         return curr, "nothing to update", False
-    db.session.execute(model.__table__.update().where(model.__table__.c.id == id).values(**data))
+    for i in data:
+        setattr(curr, i, data[i])
     try:
         db.session.commit()
     except IntegrityError as e:
@@ -309,24 +353,43 @@ class UpdateQnaire(Mutation):
         return UpdateQnaire(qnaire=curr_qnaire, ok=ok, message=message)
 
 
+class UpdateAnonymousQnaire(Mutation):
+    class Arguments:
+        id = graphene.Int(required=True)
+        name = graphene.String()
+        detail = graphene.String()
+        form = graphene.JSONString()
+        deadline = graphene.DateTime()
+
+    ok = graphene.Boolean()
+    qnaire = graphene.Field(lambda: AnonymousQnaire)
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, id, **data):
+        curr_qnaire, message, ok = updateDataById(AnonymousQnaireModel, id, data)
+        return UpdateQnaire(qnaire=curr_qnaire, ok=ok, message=message)
+
+
 class UpdateParticipate(Mutation):
     class Arguments:
         user_id = graphene.Int(required=True)
         event_id = graphene.Int(required=True)
-        join_data = graphene.JSONString(required=True)
+        answer = graphene.JSONString(required=True)
 
     ok = graphene.Boolean()
     participate = graphene.Field(lambda: Participate)
     message = graphene.String()
 
     @staticmethod
-    def mutate(root, info, user_id, event_id, join_data):
+    def mutate(root, info, user_id, event_id, answer):
+        current_app.logger.debug("UPDATE PARTICIPATE (%s %s %s)" % (user_id, event_id, answer))
         curr = db.session.query(ParticipateModel).filter(
             ParticipateModel.event_id == event_id and ParticipateModel.user_id == user_id
         ).first()
         if curr is None:
             return UpdateParticipate(ok=False, participate=None, message="cannot found")
-        curr.join_data = join_data
+        curr.answer = answer
         try:
             db.session.commit()
         except IntegrityError as e:
@@ -348,6 +411,7 @@ class UpdateAnswer(Mutation):
 
     @staticmethod
     def mutate(root, info, user_id, qnaire_id, answer):
+        current_app.logger.debug("UPDATE ANSWER %s" % answer)
         curr = db.session.query(AnswerModel).filter(
             AnswerModel.user_id == user_id and AnswerModel.qnaire_id == qnaire_id
         ).first()
@@ -367,6 +431,7 @@ class DBMutation(ObjectType):
     create_event = CreateEvent.Field()
     create_user = CreateUser.Field()
     create_qnaire = CreateQnaire.Field()
+    create_anonymous_qnaire = CreateAnonymousQnaire.Field()
     join_event = JoinEvent.Field()
     anonymous_answer_qnaire = AnonymousAnswerQnaire.Field()
     answer_qnaire = AnswerQnaire.Field()
