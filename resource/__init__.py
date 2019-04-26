@@ -64,7 +64,7 @@ def create_app(test_conf=None):
         return "success"
 
     app.add_url_rule(
-        '/',
+        '/graphql',
         view_func=GraphQLView.as_view(
             'graphql',
             schema=schema,

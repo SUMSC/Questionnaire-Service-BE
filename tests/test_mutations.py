@@ -11,7 +11,7 @@ def test_create_user(client):
     :param client:
     :return:
     """
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
     mutation testUser {
       createUser(
@@ -28,7 +28,7 @@ def test_create_user(client):
         variables={}))
     res = res.get_json()
     assert res['data']['createUser']['ok']
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
     mutation testUser {
       createUser(
@@ -52,7 +52,7 @@ def test_create_event(client):
     with open("tests/test_form.json", encoding='utf8') as f:
         form = json.loads(f.read())
         form = json.dumps(form).replace("\"", "\\\"")
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
     mutation testEvent {
       createEvent(
@@ -77,7 +77,7 @@ def test_create_event(client):
     print(res)
     assert res['data']['createEvent']['ok']
     assert res['data']['createEvent']['event']['creator']['name'] == '测试用户'
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
     mutation testEvent {
       createEvent(
@@ -129,7 +129,7 @@ def test_join_event(client):
     }
     """ % answer
         print(query)
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query=query,
         variables={}
     ))
@@ -143,7 +143,7 @@ def test_join_event(client):
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_qnaire(client):
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
     mutation createQnaire {
       createQnaire(
@@ -171,7 +171,7 @@ def test_create_qnaire(client):
     assert res['data']
     assert res['data']['createQnaire']['ok']
     assert res['data']['createQnaire']['qnaire']['id'] == '1'
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
         mutation createQnaire {
           createQnaire(
@@ -203,7 +203,7 @@ def test_create_qnaire(client):
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_anonymous_qnaire(client):
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
     mutation createAnonymousQnaire {
       createAnonymousQnaire(
@@ -232,7 +232,7 @@ def test_create_anonymous_qnaire(client):
     assert res['data']
     assert res['data']['createAnonymousQnaire']['ok']
     assert res['data']['createAnonymousQnaire']['qnaire']['id'] == '1'
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
         mutation createAnonymousQnaire {
           createAnonymousQnaire(
@@ -265,7 +265,7 @@ def test_create_anonymous_qnaire(client):
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_anonymous_answer(client):
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
     mutation anonymousAnswer {
       anonymousAnswerQnaire(
@@ -313,7 +313,7 @@ def test_answer(client):
     }
         """
     # 创建实名问卷
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query=query,
         variables={}
     )).get_json()
@@ -321,7 +321,7 @@ def test_answer(client):
     assert res['data']['answerQnaire']['ok']
     assert res['data']['answerQnaire']['answer']['qnaire']['name'] == "测试问卷2"
     # 再次创建问卷，应当失败
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query=query,
         variables={}
     )).get_json()
@@ -338,7 +338,7 @@ def test_update_user(client):
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_update_event(client):
     # 更新活动数据
-    res = client.post("/", json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
     mutation updateEvent {
       updateEvent(
@@ -360,11 +360,12 @@ def test_update_event(client):
         """,
         variables={}
     ))
+    print(res)
     res = res.get_json()
     assert not res.get('errors')
     assert res['data']['updateEvent']['ok']
     # 更新不存在的活动，应当失败，返回 cannot found
-    res = client.post("/", json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
         mutation updateEvent {
           updateEvent(
@@ -394,7 +395,7 @@ def test_update_event(client):
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_update_qnaire(client):
-    res = client.post("/", json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
     mutation updateQnaire {
       updateQnaire(
@@ -422,7 +423,7 @@ def test_update_qnaire(client):
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_update_participate(client):
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
         mutation updateParticipate{
           updateParticipate(
@@ -453,7 +454,7 @@ def test_update_participate(client):
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_update_answer(client):
-    res = client.post('/', json=dict(
+    res = client.post('/graphql', json=dict(
         query="""
         mutation updateAnswer{
           updateAnswer(
@@ -483,9 +484,9 @@ def test_update_answer(client):
     assert res['data']['updateAnswer']['answer']['user']['name'] == '测试用户'
 
 
-# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-# def test_clear(app):
-#     db.init_app(app)
-#     with app.app_context():
-#         db.drop_all()
-#         db.create_all()
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_clear(app):
+    db.init_app(app)
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
