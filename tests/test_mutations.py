@@ -74,7 +74,6 @@ def test_create_event(client):
     """ % form,
         variables={}))
     res = res.get_json()
-    print(res)
     assert res['data']['createEvent']['ok']
     assert res['data']['createEvent']['event']['creator']['name'] == '测试用户'
     res = client.post('/graphql', json=dict(
@@ -128,13 +127,11 @@ def test_join_event(client):
       }
     }
     """ % answer
-        print(query)
     res = client.post('/graphql', json=dict(
         query=query,
         variables={}
     ))
     res = res.get_json()
-    print(res)
     assert res['data']
     assert res['data']['joinEvent']['ok']
     assert res['data']['joinEvent']['participate']['user']['name'] == '测试用户'
@@ -228,7 +225,6 @@ def test_create_anonymous_qnaire(client):
         variables={}
     ))
     res = res.get_json()
-    print(res)
     assert res['data']
     assert res['data']['createAnonymousQnaire']['ok']
     assert res['data']['createAnonymousQnaire']['qnaire']['id'] == '1'
@@ -257,7 +253,6 @@ def test_create_anonymous_qnaire(client):
         variables={}
     ))
     res = res.get_json()
-    print(res)
     assert res['data']
     assert res['data']['createAnonymousQnaire']['ok']
     assert res['data']['createAnonymousQnaire']['qnaire']['id'] == '2'
@@ -360,7 +355,6 @@ def test_update_event(client):
         """,
         variables={}
     ))
-    print(res)
     res = res.get_json()
     assert not res.get('errors')
     assert res['data']['updateEvent']['ok']
