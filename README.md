@@ -13,9 +13,9 @@
 - Web Service: 服务器端渲染 / Nuxt、Vue、Koa
 
 目前进度：
-- Auth Service: 10%
-- Resource Service: 50%
-- Web Service: 30%
+- Auth Service: 90%
+- Resource Service: 80%
+- Web Service: 40%
 
 ## 需求分析
 
@@ -42,19 +42,11 @@
 ### 需求待解决问题
 
 - 用户权限是否需要用 RBAC 进行控制？
-- 文件上传如何实现？
-- Elastic Search如何对接？
-- 分页问题不适用 Relay 是否有更好的解决方案？
-
+- 文件上传如何实现？（Flask、七牛云、腾讯云）
+- Elastic Search如何对接？（定时 REINDEX）
+- 分页问题不适用 Relay 是否有更好的解决方案？（重写 RESTful API）
 
 ## Auth Service
-
-### Web 用例解析
-
-- 用户在网页上点击登录
-- 用户输入 Username、Password
-- webLogin(u, p)
-- 
 
 ## 数据存储设计
 
@@ -98,7 +90,7 @@
     - `answer_data`: `JSON`, 用户填写的问卷
     - `qnaire_id`: `INT`, 问卷ID
 
-### GraphQL API
+### GraphQL API（已废弃）
 
 #### Query
 
@@ -121,19 +113,19 @@
 
 #### method
 
-- GET
-- POST
-- PUT
-- DELETE
+- `GET`：查询，统一返回列表，返回 200 / 400
+- `POST`：插入，返回 201 / 400
+- `PUT`：更新，必须根据 ID 进行修改，返回 200 / 400
+- `DELETE`：删除，必须根据 ID 进行删除，返回 204 / 400
 
 #### entry
 
-- /user
-- /event
-- /qnaire
-- /anonymous_qnaire
-- /answer
-- /anonymous_answer
+- `/api/user`
+- `/api/event`
+- `/api/qnaire`
+- `/api/anonymous_qnaire`
+- `/api/answer`
+- `/api/anonymous_answer`
 
 ## 基础设施
 
@@ -154,8 +146,7 @@
 >  **重置数据库及 ELK INDEX 方法**:
 > - `进入`Kibana/Management`，删除索引` ，
 > - `flask shell > db.drop_all(); db.create_all()`，
-> - 执行`create_index.sql`，
-> - 修改`test`配置，执行`pytest`。
+> - 访问`<RESOURCE_URL>/build_index`。
 
 ### Kong
 
