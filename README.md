@@ -9,7 +9,7 @@
 
 技术选型：
 - Auth Service: JWT / ...
-- Resource Service: GraphQL / Flask、Graphene、SQLAlchemy
+- Resource Service: RESTful API / Flask、SQLAlchemy <s>(已废弃 v0.1：GraphQL / Flask、Graphene、SQLAlchemy)</s>
 - Web Service: 服务器端渲染 / Nuxt、Vue、Koa
 
 目前进度：
