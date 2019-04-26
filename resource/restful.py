@@ -1,6 +1,7 @@
 import functools
 
-from flask import Blueprint, g, request, jsonify, render_template
+from flask import Blueprint, g, request, jsonify, render_template, current_app
+from flask_cors import CORS
 
 from sqlalchemy.exc import IntegrityError
 from .models import db, Event as EventModel, User as UserModel, \
@@ -8,6 +9,7 @@ from .models import db, Event as EventModel, User as UserModel, \
     Answer as AnswerModel, AnonymousQnaire as AnonymousQnaireModel
 
 api = Blueprint('auth', __name__, url_prefix='/api')
+CORS(api)
 
 
 def select_data(model, query):
@@ -17,21 +19,21 @@ def select_data(model, query):
     :param data:
     :return:
     """
+    current_app.logger.debug("SELECT %s %s" % (model, query))
     offset = query.pop('offset', 0)
     sort = query.pop('sort', 'create_time')
     limit = query.pop('limit', 10)
-    return jsonify({'ok': True, 'data': [item.to_dict() for item in
-                                         db.session.query(model)
-                   .filter_by(**query)
-                   .order_by(getattr(model, sort).desc())
-                   .limit(limit)
-                   .offset(offset)
-                   .all()
-                                         ]
-                    }), 200
+    return jsonify({'ok': True,
+                    'data': [
+                        item.to_dict() for item in
+                        db.session.query(model).filter_by(**query).order_by(
+                            getattr(model, sort).desc()
+                        ).limit(limit).offset(offset).all()
+                    ]}), 200
 
 
 def create_data(model, data):
+    current_app.logger.debug("INSERT %s %s" % (model, data))
     new_field = model(**data)
     db.session.add(new_field)
     try:
@@ -43,6 +45,7 @@ def create_data(model, data):
 
 
 def update_data(model, ids, data):
+    current_app.logger.debug("UPDATE %s %s" % (model, data))
     field = db.session.query(model).filter_by(**ids).first()
     if field is None:
         return jsonify({'ok': False, 'data': {"error": "cannot found"}}), 400
@@ -60,6 +63,7 @@ def update_data(model, ids, data):
 
 
 def delete_data(model, data):
+    current_app.logger.debug("DELETE %s %s" % (model, data))
     field = db.session.query(model).filter_by(**data).first()
     if field is None:
         return jsonify({'ok': False, 'data': {"error": "cannot found"}}), 400
@@ -67,7 +71,7 @@ def delete_data(model, data):
     try:
         db.session.commit()
     except Exception as e:
-        detail = str(e).split('\n')
+        detail = str(e).split('\n')[1]
         return jsonify({'ok': False, 'data': {"error": detail}}), 400
     else:
         return jsonify({'ok': True, 'data': field.to_dict()}), 204
@@ -84,7 +88,10 @@ def user_api():
     model = UserModel
     if request.method == 'GET':
         query = dict(list(request.args.items()))
-        return jsonify({'ok': True, "data": db.session.query(model).filter_by(**query).first().to_dict()})
+        curr = db.session.query(model).filter_by(**query).first()
+        if curr is None:
+            return jsonify({'ok': False, "data": "cannot found"}), 400
+        return jsonify({'ok': True, "data": curr.to_dict()})
     if request.method == 'POST':
         return create_data(model, request.json)
     if request.method == 'PUT':
@@ -198,11 +205,11 @@ def anonymous_answer_api():
         return create_data(model, request.json)
     if request.method == 'PUT':
         data = request.json
-        if data.get('qnaire_id') is None:
+        if data.get('user_id') is None or data.get('event_id') is None:
             return jsonify({'ok': False, 'data': {"error": "no id"}}), 400
-        return update_data(model, {'qnaire_id': data.pop('qnaire_id')}, data)
+        return update_data(model, {'user_id': data.pop('user_id'), 'qnaire_id': data.pop('qnaire_id')}, data)
     if request.method == 'DELETE':
         data = request.json
-        if data.get('qnaire_id') is None:
+        if data.get('user_id') is None or data.get('qnaire_id') is None:
             return jsonify({'ok': False, 'data': {"error": "no id"}}), 400
-        return delete_data(model, {'qnaire_id': data['qnaire_id']})
+        return delete_data(model, {'user_id': data['user_id'], 'qnaire_id': data['qnaire_id']})

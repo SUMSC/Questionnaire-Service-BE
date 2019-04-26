@@ -2,7 +2,6 @@ import os
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_graphql import GraphQLView
-from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from .models import db
 from .schema import schema
@@ -12,7 +11,6 @@ from .restful import api
 def create_app(test_conf=None):
     app = Flask(__name__, instance_relative_config=True)
     app.register_blueprint(api)
-    CORS(app, resources={r"/": {"origins": "*"}})
     if test_conf:
         for i in test_conf:
             app.config[i] = test_conf[i]
