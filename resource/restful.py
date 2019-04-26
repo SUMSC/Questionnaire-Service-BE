@@ -67,7 +67,7 @@ def delete_data(model, data):
     try:
         db.session.commit()
     except Exception as e:
-        detail = str(e).split('\n')[1]
+        detail = str(e).split('\n')
         return jsonify({'ok': False, 'data': {"error": detail}}), 400
     else:
         return jsonify({'ok': True, 'data': field.to_dict()}), 204
@@ -198,11 +198,11 @@ def anonymous_answer_api():
         return create_data(model, request.json)
     if request.method == 'PUT':
         data = request.json
-        if data.get('user_id') is None or data.get('event_id') is None:
+        if data.get('qnaire_id') is None:
             return jsonify({'ok': False, 'data': {"error": "no id"}}), 400
-        return update_data(model, {'user_id': data.pop('user_id'), 'qnaire_id': data.pop('qnaire_id')}, data)
+        return update_data(model, {'qnaire_id': data.pop('qnaire_id')}, data)
     if request.method == 'DELETE':
         data = request.json
-        if data.get('user_id') is None or data.get('qnaire_id') is None:
+        if data.get('qnaire_id') is None:
             return jsonify({'ok': False, 'data': {"error": "no id"}}), 400
-        return delete_data(model, {'user_id': data['user_id'], 'qnaire_id': data['qnaire_id']})
+        return delete_data(model, {'qnaire_id': data['qnaire_id']})
