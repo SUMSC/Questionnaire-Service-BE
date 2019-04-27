@@ -90,6 +90,34 @@
     - `answer_data`: `JSON`, 用户填写的问卷
     - `qnaire_id`: `INT`, 问卷ID
 
+## API 设计
+
+### 项目结构
+
+```
+.
+├── config.py: 理论上是整个项目的配置文件，但是这里并没有真正使用
+├── requirements.txt: pip freeze
+├── resource: Flask App Package
+│   ├── __init__.py: Flask App (create_app)
+│   ├── models.py: SQLALchemy Model
+│   ├── restful.py: RESTful API 的 Flask Blueprint (api)
+│   ├── schema.py: 已废弃的 Graphene Schema
+│   └── utils.py: 一些通用函数，事实上并没有用到
+├── setup.cfg: 用于做 pytest 的配置
+├── setup.py: Python Package 的配置入口，实际意义也是 pytest
+└── tests: 单元测试
+    ├── __init__.py
+    ├── conftest.py: 一些 test fixture
+    ├── test_api.py：RESTful API 的单元测试
+    ├── test_mutations.py: GraphQL 的 Mutation 单元测试
+    └── test_query.py: GraphQL 的 Query 单元测试（无效）
+```
+
+### RESTful API
+
+
+
 ### GraphQL API（已废弃）
 
 #### Query
@@ -108,24 +136,6 @@
 - UpdateAnswer: 更新答卷
 - UpdateEvent: 更新活动
 - UpdateParticipation: 更新报名信息
-
-### RESTful API
-
-#### method
-
-- `GET`：查询，统一返回列表，返回 200 / 400
-- `POST`：插入，返回 201 / 400
-- `PUT`：更新，必须根据 ID 进行修改，返回 200 / 400
-- `DELETE`：删除，必须根据 ID 进行删除，返回 204 / 400
-
-#### entry
-
-- `/api/user`
-- `/api/event`
-- `/api/qnaire`
-- `/api/anonymous_qnaire`
-- `/api/answer`
-- `/api/anonymous_answer`
 
 ## 基础设施
 
