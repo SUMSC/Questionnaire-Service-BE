@@ -8,7 +8,7 @@ from resource.models import db
 def app():
     app = create_app({
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "postgresql+psycopg2://sumsc:sumsc666@192.168.2.101:55432/eform-test",
+        "SQLALCHEMY_DATABASE_URI": "postgresql+psycopg2://sumsc:sumsc666@192.168.2.101:55432/eform",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False
     })
     db.init_app(app)

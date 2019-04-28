@@ -1,12 +1,25 @@
 from datetime import datetime
+from collections import Iterable
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, INT, VARCHAR, TEXT, TIMESTAMP, BOOLEAN, create_engine, ForeignKey
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
+from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.dialects.postgresql import JSON
 
 
 def to_dict(self):
+    data = {c: getattr(self, c, None) for c in dir(self) if
+            (not c.startswith('_') or c == '_active') and c not in ['metadata', 'to_dict', 'to_dict_plain', 'query_class', 'query']}
+    for i in data:
+        if 'model' in str(type(data[i])):
+            data[i] = data[i].to_dict_plain()
+        elif isinstance(data[i], list):
+            data[i] = [it.to_dict_plain() for it in data[i]]
+    return data
+
+
+def to_dict_plain(self):
     return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}
 
 
@@ -14,7 +27,8 @@ db = SQLAlchemy()
 Base = db.Model
 Base.query = db.session.query_property()
 Base.to_dict = to_dict
-Base.__repr__ = lambda self: str(self.to_dict())
+Base.to_dict_plain = to_dict_plain
+Base.__repr__ = lambda _: str(_.to_dict_plain())
 
 
 class User(Base):

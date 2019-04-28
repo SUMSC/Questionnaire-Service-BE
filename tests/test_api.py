@@ -3,6 +3,7 @@ import json
 from flask import request
 from resource.models import db
 
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_user(client):
     res = client.post(
@@ -12,9 +13,12 @@ def test_create_user(client):
             'name': '测试用户'
         }
     )
+    print(res.json)
     assert res.status_code == 201
     res = res.json
+
     assert res['ok']
+
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_second_user(client):
@@ -28,6 +32,7 @@ def test_create_second_user(client):
     res = res.json
     assert res['ok']
 
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_select_user(client):
     res = client.get(
@@ -35,6 +40,7 @@ def test_select_user(client):
     )
     res = res.json
     assert res['ok']
+
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_update_user(client):
@@ -54,6 +60,7 @@ def test_update_user(client):
     assert res.status_code == 200
     assert res.json['data']['error'] == 'nothing to update'
 
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_event(client):
     with open("tests/test_form.json", encoding='utf8') as f:
@@ -72,6 +79,7 @@ def test_create_event(client):
     assert res.status_code == 201
     assert res.json['ok']
 
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_select_event(client):
     res = client.get(
@@ -79,6 +87,7 @@ def test_select_event(client):
     )
     assert res.status_code == 200
     assert res.json['ok']
+
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_update_event(client):
@@ -91,6 +100,7 @@ def test_update_event(client):
     )
     assert res.status_code == 200
     assert res.json['ok']
+
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_participate(client):
@@ -141,6 +151,7 @@ def test_create_qnaire(client):
     assert res.status_code == 201
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_create_second_qnaire(client):
     with open("tests/test_form.json", encoding='utf8') as f:
         form = json.dumps(json.loads(f.read()))
@@ -157,7 +168,6 @@ def test_create_second_qnaire(client):
         }
     )
     assert res.status_code == 201
-
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -300,12 +310,10 @@ def test_update_answer(client):
         json={
             'user_id': 1,
             'qnaire_id': 1,
-            'event_id': 1,
             'answer': answer
         }
     )
     assert res.status_code == 200
-
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -316,90 +324,86 @@ def test_update_anonymous_answer(client):
         '/api/anonymous_answer',
         json={
             'qnaire_id': 1,
-            'event_id': 1,
             'answer': answer
         }
     )
+    print(res.json)
     assert res.status_code == 200
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_delete_answer(client):
-    res = client.delete(
-        '/api/answer',
-        json={
-            'user_id': 1,
-            'qnaire_id': 1
-        }
-    )
-    assert res.status_code == 204
-
-
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_delete_anonymous_answer(client):
-    res = client.delete(
-        '/api/anonymous_answer',
-        json={
-            'qnaire_id': 1
-        }
-    )
-    assert res.status_code == 204
-
-
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_delete_qnaire(client):
-    res = client.delete(
-        '/api/qnaire',
-        json={
-            'id': 1
-        }
-    )
-    assert res.status_code == 204
-
-
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_delete_anonymous_qnaire(client):
-    res = client.delete(
-        '/api/anonymous_qnaire',
-        json={
-            'id': 1
-        }
-    )
-    assert res.status_code == 204
-
-
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_delete_participate(client):
-    with open("tests/test_answer.json", encoding='utf8') as f:
-        answer = json.dumps(json.loads(f.read()))
-    res = client.delete(
-        '/api/participate',
-        json={
-            'user_id': 1,
-            'event_id': 1
-        }
-    )
-    assert res.status_code == 204
-
-
-
-
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_delete_event(client):
-    res = client.delete(
-        '/api/event',
-        json={
-            'id': 1
-        }
-    )
-    assert res.status_code == 204
-
-
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_clear(app):
-    db.init_app(app)
-    with app.app_context():
-        db.drop_all()
-        db.create_all()
-
-
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# def test_delete_answer(client):
+#     res = client.delete(
+#         '/api/answer',
+#         json={
+#             'user_id': 1,
+#             'qnaire_id': 1
+#         }
+#     )
+#     assert res.status_code == 204
+#
+#
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# def test_delete_anonymous_answer(client):
+#     res = client.delete(
+#         '/api/anonymous_answer',
+#         json={
+#             'qnaire_id': 1
+#         }
+#     )
+#     assert res.status_code == 204
+#
+#
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# def test_delete_qnaire(client):
+#     res = client.delete(
+#         '/api/qnaire',
+#         json={
+#             'id': 1
+#         }
+#     )
+#     assert res.status_code == 204
+#
+#
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# def test_delete_anonymous_qnaire(client):
+#     res = client.delete(
+#         '/api/anonymous_qnaire',
+#         json={
+#             'id': 1
+#         }
+#     )
+#     assert res.status_code == 204
+#
+#
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# def test_delete_participate(client):
+#     with open("tests/test_answer.json", encoding='utf8') as f:
+#         answer = json.dumps(json.loads(f.read()))
+#     res = client.delete(
+#         '/api/participate',
+#         json={
+#             'user_id': 1,
+#             'event_id': 1
+#         }
+#     )
+#     assert res.status_code == 204
+#
+#
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# def test_delete_event(client):
+#     res = client.delete(
+#         '/api/event',
+#         json={
+#             'id': 1
+#         }
+#     )
+#     assert res.status_code == 204
+#
+#
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# def test_clear(app):
+#     db.init_app(app)
+#     with app.app_context():
+#         db.drop_all()
+#         db.create_all()

@@ -186,7 +186,7 @@ def answer_api():
         return create_data(model, request.json)
     if request.method == 'PUT':
         data = request.json
-        if data.get('user_id') is None or data.get('event_id') is None:
+        if data.get('user_id') is None or data.get('qnaire_id') is None:
             return jsonify({'ok': False, 'data': {"error": "no id"}}), 400
         return update_data(model, {'user_id': data.pop('user_id'), 'qnaire_id': data.pop('qnaire_id')}, data)
     if request.method == 'DELETE':
@@ -205,11 +205,11 @@ def anonymous_answer_api():
         return create_data(model, request.json)
     if request.method == 'PUT':
         data = request.json
-        if data.get('user_id') is None or data.get('event_id') is None:
+        if data.get('qnaire_id') is None:
             return jsonify({'ok': False, 'data': {"error": "no id"}}), 400
-        return update_data(model, {'user_id': data.pop('user_id'), 'qnaire_id': data.pop('qnaire_id')}, data)
+        return update_data(model, {'qnaire_id': data.pop('qnaire_id')}, data)
     if request.method == 'DELETE':
         data = request.json
-        if data.get('user_id') is None or data.get('qnaire_id') is None:
+        if data.get('qnaire_id') is None:
             return jsonify({'ok': False, 'data': {"error": "no id"}}), 400
-        return delete_data(model, {'user_id': data['user_id'], 'qnaire_id': data['qnaire_id']})
+        return delete_data(model, {'qnaire_id': data['qnaire_id']})
