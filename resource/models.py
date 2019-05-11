@@ -7,10 +7,16 @@ from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.dialects.postgresql import JSON
 
+ignore_set = {'_active'}
 
 def to_dict(self):
+    """
+    将 SQLAlchemy Model 对象序列化为字典，同时也会对 backref 属性进行处理
+    backref 属性内的 backref 不会被序列化，避免循环调用
+    """
     data = {c: getattr(self, c, None) for c in dir(self) if
-            (not c.startswith('_') or c == '_active') and c not in ['metadata', 'to_dict', 'to_dict_plain', 'query_class', 'query']}
+            (not c.startswith('_') or not c in ignore_set) and 
+            c not in ['metadata', 'to_dict', 'to_dict_plain', 'query_class', 'query']}
     for i in data:
         if 'model' in str(type(data[i])):
             data[i] = data[i].to_dict_plain()
@@ -20,6 +26,9 @@ def to_dict(self):
 
 
 def to_dict_plain(self):
+    """
+    只处理数据库中存在的列，不处理 backref 属性
+    """
     return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}
 
 
