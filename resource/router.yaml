@@ -13,7 +13,7 @@
 /api/user:
   GET:
     query:
-      - name: id
+      - name: id_tag
         required: true
   POST:
     query:

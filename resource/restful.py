@@ -14,7 +14,8 @@ CORS(api)
 
 @api.before_request
 def check_router():
-    router = load_router()
+    # router = load_router()
+    router = {}
     routes = filter(route_match(request.path), router.keys())
     for route in routes:
         print(route)
