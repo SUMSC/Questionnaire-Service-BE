@@ -1,0 +1,464 @@
+openapi: 3.0.0
+
+info:
+  version: "1.0.0-oas3"
+  title: eForm API
+  contact:
+    email: wzhzzmzzy@gmail.com
+    name: wzhzzmzzy
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+  description: eForm API 文档
+            
+servers:
+  - url: 'https://eform.wzhzzmzzy.xyz/api'
+
+components:
+  schemas:
+    GeneralError:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      additionalProperties: true
+     User:
+       type: object
+       required:
+         - id
+         - name
+         - sid
+         - type
+       properties:
+         id:
+           type: integer
+           format: int32
+         name:
+           type: string
+           example: 王磊
+         sid:
+           type: string
+           example: 1827406068
+         type:
+           type: integer
+    Form:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            format: int32
+          type:
+            type: string
+          label:
+            type: string
+          description:
+            type: string
+          data:
+            type: object
+            additionalProperties: true
+    FormAnswer:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            format: int32
+          answer:
+            type: object
+            additionalProperties: true
+    Qnaire:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        description:
+          type: string
+        owner:
+          # $ref: '#/components/schemas/User'
+          type: string
+          example: 1627406048
+        form:
+          $ref: '#/components/schemas/Form'
+        deadline:
+          type: string
+          format: date-time
+        _create_time:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+    Anaire:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        description:
+          type: string
+        owner:
+          # $ref: '#/components/schemas/User'
+          type: string
+          example: 1627406048
+        form:
+          $ref: '#/components/schemas/Form'
+        deadline:
+          type: string
+          format: date-time
+        _create_time:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+    QnaireBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        owner:
+          # $ref: '#/components/schemas/User'
+          type: string
+          example: 1627406048
+        _create_time:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        anonymous:
+          type: boolean
+    Answer:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        owner:
+          # $ref: '#/components/schemas/User'
+          type: string
+          example: 1627406048
+        qnaire:
+          $ref: '#/components/schemas/Qnaire'
+        answer:
+          $ref: '#/components/schemas/FormAnswer'
+        _create_time:
+          type: string
+          format: date-time
+    GAnswer:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        qnaire:
+          $ref: '#/components/schemas/Anaire'
+        answer:
+          $ref: '#/components/schemas/FormAnswer'
+        _create_time:
+          type: string
+          format: date-time
+  responses:
+    GeneralError:
+      description: General Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+externalDocs:
+  description: 需求归纳
+  url: https://www.yuque.com/amber-qj2ik/og2yb9/hwcz3l
+
+tags:
+  - name: Login
+    description: 用户登录
+  - name: Database
+    description: 数据库 API
+  - name: Business
+    description: 业务 API
+
+paths:
+  /login:
+    post:
+      tags:
+        - Login
+      summary: 用户登录
+      operationId: userLogin
+      responses:
+        '200':
+          description: login succeeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        default:
+          $ref: '#/components/responses/GeneralError'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                token:
+                  type: string
+  /my-qnaire:
+    get:
+      tags:
+        - Database
+      summary: 个人创建的问卷
+      operationId: myQnaire
+      responses:
+        '200':
+          description: 问卷列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QnaireBrief'
+        default:
+          $ref: '#/components/responses/GeneralError'
+  /my-answer:
+    get:
+      tags:
+        - Database
+      summary: 个人填写的所有答卷
+      operationId: myAnswer
+      responses:
+        '200':
+          description: 答卷列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QnaireBrief'
+        default:
+          $ref: '#/components/responses/GeneralError'
+  /qnaire:
+    get:
+      tags:
+        - Database
+      summary: 获取单个问卷的详细信息
+      operationId: getQnaireById
+      parameters:
+        - in: cookie
+          name: token
+          required: true
+          description: 用户 Token
+          schema:
+            type: string
+        - in: query
+          name: id
+          required: true
+          description: 问卷 ID
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+        - in: query
+          name: a
+          required: true
+          description: 是否匿名问卷
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: 问卷详细信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Qnaire'
+        default:
+          $ref: '#/components/responses/GeneralError'
+    post:
+      tags:
+        - Database
+      summary: 新建问卷
+      operationId: newQnaire
+      parameters:
+        - in: cookie
+          name: token
+          required: true
+          description: 用户 Token
+          schema:
+            type: string
+        - in: query
+          name: a
+          required: true
+          description: 是否匿名问卷
+          schema:
+            type: boolean
+      requestBody:
+        description: 不需要问卷ID
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                owner:
+                  type: string
+                  example: 1627406048
+                form:
+                  $ref: '#/components/schemas/Form'
+                deadline:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: created
+        default:
+          $ref: '#/components/responses/GeneralError'
+    put:
+      tags:
+        - Database
+      summary: 更新问卷
+      operationId: updateQnaire
+      parameters:
+        - in: cookie
+          name: token
+          required: true
+          description: 用户 Token
+          schema:
+            type: string
+        - in: query
+          name: id
+          required: true
+          description: 问卷ID
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+        - in: query
+          name: a
+          required: true
+          description: 是否匿名问卷
+          schema:
+            type: boolean
+      requestBody:
+        description: 需要问卷ID
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Qnaire'
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/GeneralError'
+    delete:
+      tags:
+        - Database
+      summary: 删除问卷
+      operationId: deleteQnaire
+      parameters:
+        - in: cookie
+          name: token
+          required: true
+          description: 用户 Token
+          schema:
+            type: string
+        - in: query
+          name: id
+          required: true
+          description: 问卷ID
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+        - in: query
+          name: a
+          required: true
+          description: 是否匿名问卷
+          schema:
+            type: boolean
+      responses:
+        '204':
+          description: 已删除
+        default:
+          $ref: '#/components/responses/GeneralError'
+  /upload:
+    post:
+      tags:
+        - Business
+      summary: 文件上传
+      operationId: fileUpload
+      parameters:
+        - in: query
+          name: id
+          required: true
+          description: 答卷 ID
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+        - in: cookie
+          name: token
+          required: true
+          description: 用户 Token
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/*:
+            example: ".docx"
+      responses:
+        '201':
+          description: upload succeeeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fd:
+                    type: string
+                    example: 'example file'
+        default:
+          $ref: '#/components/responses/GeneralError'
+  /output:
+    get:
+      tags:
+        - Business
+      summary: 导出原始数据
+      operationId: outputRawData
+      parameters:
+        - in: cookie
+          name: token
+          required: true
+          description: 用户 Token
+          schema:
+            type: string
+        - in: query
+          name: id
+          required: true
+          description: 问卷 ID
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+      responses:
+        '200':
+          description: output succeeded
+          content:
+            text/csv:
+              example: '.csv'
+        default:
+          $ref: '#/components/responses/GeneralError'
