@@ -1,0 +1,88 @@
+# Router Format:
+# /baseURL:
+#   HTTP-METHOD:
+#     cookies/query/json:
+#       - name: param-name
+#         type: string/int/list/dict/bool/date/any(default)
+#         required: true/false(default)
+/api:
+  ALL:
+    cookies:
+      - name: token
+        required: true
+/api/user:
+  GET:
+    query:
+      - name: id
+        required: true
+  POST:
+    query:
+      - name: id
+        required: true
+/api/qnaire:
+  GET:
+    query:
+      # 是否是匿名问卷
+      - name: a
+        type: boolean
+        required: true
+      - name: id
+        type: int
+        required: true
+  POST:
+    json:
+      - name: name
+        required: true
+      - name: description
+      - name: owner
+        required: true
+      - name: form
+        type: list
+        required: true
+      - name: deadline
+        type: datetime
+  PUT:
+    json:
+      - name: id
+        type: int
+        required: true
+      - name: name
+      - name: description
+      - name: owner_id
+      - name: form
+        type: list
+      - name: deadline
+        type: datetime
+  DELETE:
+    query:
+      - name: id
+        type: int
+        required: true
+/api/answer:
+  GET:
+    query:
+      # 是否是匿名问卷
+      - name: a
+        type: boolean
+        required: true
+      - name: id
+        type: int
+        required: true
+  POST:
+    json:
+      - name: owner_id
+        required: true
+      - name: qnaire_id
+        type: int
+        required: true
+      - name: answer
+        type: list
+        required: true
+  PUT:
+    json:
+      - name: id
+        type: int
+        required: true
+      - name: answer
+        type: list
+        required: true
