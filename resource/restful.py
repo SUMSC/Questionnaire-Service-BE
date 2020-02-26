@@ -1,3 +1,4 @@
+import jwt
 from flask import Blueprint, current_app, redirect, jsonify, request
 from flask_cors import CORS
 
@@ -45,10 +46,24 @@ def user_api():
     model = UserModel
     if request.method == 'GET':
         query = request.args.to_dict()
-        curr = db.session.query(model).filter_by(**query).first()
+        if query.get('id_tag'):
+            curr = db.session.query(model).filter_by(**query).first()
+            if curr is None:
+                return jsonify(general_error(400, 'cannot found')), 400
+            return jsonify(general_error(200, curr.to_dict()))
+        token_payload = jwt.decode(request.cookies['X-Access-Token'])
+        curr = db.session.query(model).filter_by(id_tag=token_payload['id']).first()
         if curr is None:
-            return jsonify(general_error(400, 'cannot found')), 400
-        return jsonify(general_error(200, curr.to_dict()))
+            res = create_data(model, {
+                'id_tag': token_payload['id'],
+                'name': token_payload['name'],
+                'type': '学生' if token_payload['usertype'] == '1' else '教师'
+            })
+            if res[1] == 201:
+                curr = db.session.query(model).filter_by(id_tag=token_payload['id']).first()
+                return jsonify(general_error(200, curr.to_dict()))
+            else:
+                return res
     if request.method == 'POST':
         return create_data(model, request.json)
 

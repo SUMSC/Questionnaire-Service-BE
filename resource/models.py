@@ -44,7 +44,7 @@ class User(Base):
     __tablename__ = "user"
     id_tag = Column(VARCHAR(16), nullable=False, primary_key=True, comment="学号")
     name = Column(VARCHAR(12), nullable=False, comment="用户姓名")
-    type = Column(BOOLEAN, nullable=False, comment="用户类型")
+    type = Column(VARCHAR(10), nullable=False, comment="用户类型")
 
 
 class Qnaire(Base):

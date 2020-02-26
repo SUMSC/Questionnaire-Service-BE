@@ -14,11 +14,6 @@
   GET:
     query:
       - name: id_tag
-        required: true
-  POST:
-    query:
-      - name: id
-        required: true
 /api/qnaire:
   GET:
     query:
