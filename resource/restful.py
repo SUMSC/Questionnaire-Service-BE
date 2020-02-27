@@ -71,6 +71,7 @@ def user_api():
                 return jsonify(general_error(200, curr.to_dict()))
             else:
                 return res
+        return jsonify(general_error(200, curr.to_dict()))
     if request.method == 'POST':
         return create_data(model, request.json)
 
