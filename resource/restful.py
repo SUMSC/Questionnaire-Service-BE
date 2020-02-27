@@ -1,7 +1,6 @@
 import jwt
 from flask import Blueprint, current_app, redirect, jsonify, request
 from flask_cors import CORS
-
 from resource.exceptions import InvalidRequestError
 from resource.models import db, User as UserModel, \
     Qnaire as QnaireModel, GAnswer as GAnswerModel, \
@@ -10,7 +9,12 @@ from resource.utils import route_match, check_restrain, general_error, \
     select_data, create_data, update_data, delete_data, load_router
 
 api = Blueprint('auth', __name__, url_prefix='/api')
-CORS(api)
+CORS(api,
+     supports_credentials=True,
+     max_age=3600,
+     methods='GET,POST,PUT,DELETE,OPTIONS',
+     allow_headers='Origin,X-Requested-With,Content-Type,Accept,Authorization'
+     )
 
 
 @api.before_request
