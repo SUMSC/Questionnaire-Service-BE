@@ -10,7 +10,6 @@ from resource.utils import route_match, check_restrain, general_error, \
 
 api = Blueprint('auth', __name__, url_prefix='/api')
 CORS(api,
-     supports_credentials=True,
      max_age=3600,
      methods='GET,POST,PUT,DELETE,OPTIONS',
      allow_headers='Origin,X-Requested-With,Content-Type,Accept,Authorization'
