@@ -54,7 +54,10 @@ def user_api():
             if curr is None:
                 return jsonify(general_error(400, 'cannot found')), 400
             return jsonify(general_error(200, curr.to_dict()))
-        token_payload = jwt.decode(request.headers['Authorization'])
+        token_payload = jwt.decode(
+            request.headers['Authorization'],
+            current_app.config['SECRET_KEY'],
+            options={'verify_exp': False})
         print(token_payload)
         curr = db.session.query(model).filter_by(id_tag=token_payload['id']).first()
         if curr is None:

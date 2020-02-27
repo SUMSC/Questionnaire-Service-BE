@@ -23,6 +23,7 @@ def create_app(test_conf=None):
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['SQLALCHEMY_POOL_RECYCLE'] = 5
         app.config['UPLOAD_FOLDER'] = "upload"
+        app.config['SECRET_KEY'] = 'changeit'
         db.init_app(app)
 
     @app.route('/upload', methods=['POST'])

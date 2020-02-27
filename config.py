@@ -5,6 +5,7 @@ class Config(object):
     DEBUG = False
     TESTING = False
     TRACK_MODIFICATIONS = True
+    SECRET_KEY = 'changeit'
 
 
 class ProductionConfig(Config):
