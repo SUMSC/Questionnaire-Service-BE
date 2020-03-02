@@ -1,5 +1,5 @@
 import jwt
-from flask import Blueprint, current_app, redirect, jsonify, request
+from flask import Blueprint, current_app, redirect, jsonify, request, g
 from flask_cors import CORS
 from resource.exceptions import InvalidRequestError
 from resource.models import db, User as UserModel, \
@@ -38,6 +38,18 @@ def check_router():
                 return None
 
 
+@api.before_request
+def check_authorization():
+    token_payload = jwt.decode(
+        request.headers['Authorization'],
+        current_app.config['SECRET_KEY'],
+        options={'verify_exp': True})
+    if token_payload:
+        g.token_payload = token_payload
+    else:
+        return jsonify(general_error(401, '登陆已过期')), 401
+
+
 @api.route('/')
 def api_documentation():
     # return redirect('https://app.swaggerhub.com/apis-docs/wzhzzmzzy/eForm-API/1.0.0-oas3')
@@ -54,11 +66,7 @@ def user_api():
             if curr is None:
                 return jsonify(general_error(400, 'cannot found')), 400
             return jsonify(general_error(200, curr.to_dict()))
-        token_payload = jwt.decode(
-            request.headers['Authorization'],
-            current_app.config['SECRET_KEY'],
-            options={'verify_exp': False})
-        print(token_payload)
+        token_payload = g.token_payload
         curr = db.session.query(model).filter_by(id_tag=token_payload['id']).first()
         if curr is None:
             res = create_data(model, {
@@ -106,3 +114,9 @@ def answer_api():
             return jsonify(general_error(400, 'anonymous answer cannot be updated'))
         data = request.json
         return update_data(model, {'id': request.get_json()['id']}, data)
+
+
+@api.route('/import/excel', method=['POST'])
+def qnaire_from_excel():
+    # TODO: Add Excel Parser of `Tablib`, which parses .xlsx file to qnaire, then push it as qnaire
+    return jsonify(general_error(200, 'ok')), 200
