@@ -11,3 +11,8 @@ class InvalidRequestError(Exception):
         self.params = params
         self.place = place
         self.message = message
+
+
+class QnaireParserError(Exception):
+    def __init__(self, message):
+        self.message = message

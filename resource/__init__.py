@@ -1,15 +1,10 @@
 import os
 
-from flask import Flask, request, jsonify, send_from_directory
-
+from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
-# from flask_graphql import GraphQLView
 
 from .models import db
 from .restful import api
-
-
-# from .schema import schema
 
 
 def create_app(test_conf=None):
@@ -22,7 +17,7 @@ def create_app(test_conf=None):
         app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql+psycopg2://eform:changeit@wzhzzmzzy.xyz:5432/eform"
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['SQLALCHEMY_POOL_RECYCLE'] = 5
-        app.config['UPLOAD_FOLDER'] = "upload"
+        app.config['UPLOAD_FOLDER'] = "static"
         app.config['SECRET_KEY'] = 'changeit'
         db.init_app(app)
 
@@ -35,10 +30,6 @@ def create_app(test_conf=None):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         return jsonify({"ok": True, "detail": filename})
-
-    @app.route('/files/<filename>')
-    def get_file(filename):
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
     @app.route('/build_index')
     def build_index_pg():
@@ -65,14 +56,5 @@ def create_app(test_conf=None):
         """)
         db.session.commit()
         return "success"
-
-    # app.add_url_rule(
-    #     '/graphql',
-    #     view_func=GraphQLView.as_view(
-    #         'graphql',
-    #         schema=schema,
-    #         graphiql=True
-    #     )
-    # )
 
     return app

@@ -4,9 +4,11 @@ import time
 import re
 
 import yaml
+import tablib
+from pprint import pprint
 from flask import Blueprint, current_app, redirect, jsonify, request
 from resource.models import db
-from resource.exceptions import InvalidRequestError
+from resource.exceptions import InvalidRequestError, QnaireParserError
 
 
 def load_router(file='./router.yaml'):
@@ -60,6 +62,7 @@ def check_restrain(restrain):
 def route_match(path):
     def _(route):
         return re.search(route, path) is not None
+
     return _
 
 
@@ -98,7 +101,10 @@ def create_data(model, data):
     except Exception as e:
         detail = str(e).split('\n')[1]
         return jsonify(general_error(400, detail)), 400
-    return jsonify(general_error(201, 'created')), 201
+    if new_field.id:
+        return jsonify(general_error(201, new_field.id)), 201
+    else:
+        return jsonify(general_error(201, 'created')), 201
 
 
 def update_data(model, ids, data):
@@ -132,3 +138,58 @@ def delete_data(model, data):
         return jsonify(general_error(400, detail)), 400
     else:
         return jsonify(general_error(204, 'no content')), 204
+
+
+def excel_parser(fd):
+    """
+    @param fd: The input stream for the uploaded file. This usually points to an open temporary file.
+    @return (qnaire: dict, qnaire_type: str)
+    """
+    date_pattern = re.compile(r'((^((1[8-9]\d{2})|([2-9]\d{3}))([-\/\._])(10|12|0?[13578])([-\/\._])(3[01]|[12]['
+                              r'0-9]|0?[1-9])$)|(^((1[8-9]\d{2})|([2-9]\d{3}))([-\/\._])(11|0?[469])([-\/\._])(30|['
+                              r'12][0-9]|0?[1-9])$)|(^((1[8-9]\d{2})|([2-9]\d{3}))([-\/\._])(0?2)([-\/\._])(2[0-8]|1['
+                              r'0-9]|0?[1-9])$)|(^([2468][048]00)([-\/\._])(0?2)([-\/\._])(29)$)|(^([3579][26]00)(['
+                              r'-\/\._])(0?2)([-\/\._])(29)$)|(^([1][89][0][48])([-\/\._])(0?2)([-\/\._])(29)$)|(^(['
+                              r'2-9][0-9][0][48])([-\/\._])(0?2)([-\/\._])(29)$)|(^([1][89][2468][048])([-\/\._])('
+                              r'0?2)([-\/\._])(29)$)|(^([2-9][0-9][2468][048])([-\/\._])(0?2)([-\/\._])(29)$)|(^([1]['
+                              r'89][13579][26])([-\/\._])(0?2)([-\/\._])(29)$)|(^([2-9][0-9][13579][26])([-\/\._])('
+                              r'0?2)([-\/\._])(29)$))')
+    qnaire_data = {'form': []}
+    qnaire = tablib.Dataset()
+    qnaire.load(fd, format='xlsx')
+    headers = qnaire.headers
+    qnaire_type = qnaire.get_col(0)[0].strip()
+    if qnaire_type not in ('实名问卷', '匿名问卷'):
+        raise QnaireParserError('unknown type of qnaire')
+    qnaire_data['name'] = headers[0].strip()
+    qnaire_data['description'] = qnaire.get_col(0)[1].strip()
+    if len(qnaire_data['name']) > 30:
+        raise QnaireParserError('qnaire name is too long')
+    question_names = headers[1:]
+    for i, n in enumerate(question_names):
+        form_data = {}
+        match = re.match(r'\[(.*?)\](.*)', n)
+        form_data['id'] = i
+        form_data['type'] = match.group(1).strip()
+        if form_data['type'] not in ('单行文本题', '多行文本题', '单选题', '多选题', '地域选择题', '日期选择题', '附件题', '文本描述'):
+            raise QnaireParserError(f'unknown type of question {i}')
+        form_data['name'] = match.group(2).strip()
+        if len(form_data['name']) > 100:
+            raise QnaireParserError(f'question {i}\'s name is too long')
+        if form_data['type'] in ('单选题', '多选题', '日期选择题'):
+            meta = qnaire.get_col(i + 1)
+            form_data['meta'] = {}
+            if form_data['type'] in ('单选题', '多选题'):
+                form_data['meta']['selection'] = meta
+            if form_data['type'] == '日期选择题':
+                if meta[0] and re.match(date_pattern, meta[0]) is not None:
+                    form_data['meta']['form'] = meta[0]
+                if meta[1] and re.match(date_pattern, meta[1]) is not None:
+                    form_data['meta']['to'] = meta[1]
+        qnaire_data['form'].append(form_data)
+    return qnaire_data, qnaire_type
+
+
+if __name__ == '__main__':
+    with open('static/qnaire_excel_test.xlsx', 'rb') as f:
+        pprint(excel_parser(f))

@@ -1,12 +1,12 @@
 import jwt
-from flask import Blueprint, current_app, redirect, jsonify, request, g
+from flask import Blueprint, current_app, redirect, jsonify, request, g, send_from_directory
 from flask_cors import CORS
 from resource.exceptions import InvalidRequestError
 from resource.models import db, User as UserModel, \
     Qnaire as QnaireModel, GAnswer as GAnswerModel, \
     Answer as AnswerModel, Anaire as AnaireModel
 from resource.utils import route_match, check_restrain, general_error, \
-    select_data, create_data, update_data, delete_data, load_router
+    select_data, create_data, update_data, delete_data, load_router, excel_parser
 
 api = Blueprint('auth', __name__, url_prefix='/api')
 CORS(api,
@@ -52,8 +52,12 @@ def check_authorization():
 
 @api.route('/')
 def api_documentation():
-    # return redirect('https://app.swaggerhub.com/apis-docs/wzhzzmzzy/eForm-API/1.0.0-oas3')
-    return 'ok'
+    return redirect('https://app.swaggerhub.com/apis-docs/wzhzzmzzy/eForm-API/1.0.0-oas3')
+
+
+@api.route('/files/<filename>')
+def get_file(filename):
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 
 @api.route('/user', methods=['GET', 'POST'])
@@ -116,7 +120,13 @@ def answer_api():
         return update_data(model, {'id': request.get_json()['id']}, data)
 
 
-@api.route('/import/excel', method=['POST'])
+@api.route('/import/excel', methods=['POST'])
 def qnaire_from_excel():
-    # TODO: Add Excel Parser of `Tablib`, which parses .xlsx file to qnaire, then push it as qnaire
-    return jsonify(general_error(200, 'ok')), 200
+    print(request.files)
+    file = request.files.get('file')
+    if file is None or file.filename == '':
+        return jsonify(general_error(400, 'no file'))
+    qnaire, qnaire_type = excel_parser(file.stream)
+    model = QnaireModel if qnaire_type == '实名问卷' else AnaireModel
+    qnaire['owner_id'] = g.token_payload['id']
+    return create_data(model, request.json)
