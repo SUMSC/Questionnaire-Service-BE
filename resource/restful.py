@@ -41,7 +41,7 @@ def check_router():
 @api.before_request
 def check_authorization():
     token_payload = jwt.decode(
-        request.headers['Authorization'],
+        request.headers['X-Custom-Auth'],
         current_app.config['SECRET_KEY'],
         options={'verify_exp': True})
     if token_payload:
