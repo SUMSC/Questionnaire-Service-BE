@@ -1,7 +1,7 @@
 import jwt
 from flask import Blueprint, current_app, redirect, jsonify, request, g, send_from_directory
 from flask_cors import CORS
-from resource.exceptions import InvalidRequestError
+from resource.exceptions import InvalidRequestError, QnaireParserError
 from resource.models import db, User as UserModel, \
     Qnaire as QnaireModel, GAnswer as GAnswerModel, \
     Answer as AnswerModel, Anaire as AnaireModel
@@ -126,7 +126,10 @@ def qnaire_from_excel():
     file = request.files.get('file')
     if file is None or file.filename == '':
         return jsonify(general_error(400, 'no file'))
-    qnaire, qnaire_type = excel_parser(file.stream)
+    try:
+        qnaire, qnaire_type = excel_parser(file.stream)
+    except QnaireParserError as e:
+        return jsonify(general_error(400, e.message)), 400
     model = QnaireModel if qnaire_type == '实名问卷' else AnaireModel
     qnaire['owner_id'] = g.token_payload['id']
     return create_data(model, request.json)
