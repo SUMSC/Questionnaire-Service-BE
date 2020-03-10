@@ -6,11 +6,7 @@ from resource.models import db
 
 @pytest.fixture
 def app():
-    app = create_app({
-        "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "postgresql+psycopg2://eform:changeit@wzhzzmzzy.xyz:5432/eform",
-        "SQLALCHEMY_TRACK_MODIFICATIONS": False
-    })
+    app = create_app('TESTING')
     db.init_app(app)
     yield app
 

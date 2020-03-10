@@ -10,6 +10,17 @@ from flask import Blueprint, current_app, redirect, jsonify, request
 from resource.models import db
 from resource.exceptions import InvalidRequestError, QnaireParserError
 
+question_type = {
+    '文本描述': 'plain-text',
+    '单项选择题': 'qnaire-select',
+    '多项选择题': 'qnaire-checkbox',
+    '单行文本题': 'qnaire-input',
+    '多行文本题': 'qnaire-textarea',
+    '地域选择题': 'area-picker',
+    '日期选择题': 'date-picker',
+    '附件题': 'file-uploader'
+}
+
 
 def load_router(file='./router.yaml'):
     with open(file) as router_file:
@@ -99,9 +110,10 @@ def create_data(model, data):
     try:
         db.session.commit()
     except Exception as e:
+        print(str(e))
         detail = str(e).split('\n')[1]
         return jsonify(general_error(400, detail)), 400
-    if new_field.id:
+    if getattr(new_field, 'id', None):
         return jsonify(general_error(201, new_field.id)), 201
     else:
         return jsonify(general_error(201, 'created')), 201
@@ -182,10 +194,11 @@ def excel_parser(fd):
             if form_data['type'] in ('单选题', '多选题'):
                 form_data['meta']['selection'] = meta
             if form_data['type'] == '日期选择题':
-                if meta[0] and re.match(date_pattern, meta[0]) is not None:
-                    form_data['meta']['form'] = meta[0]
-                if meta[1] and re.match(date_pattern, meta[1]) is not None:
-                    form_data['meta']['to'] = meta[1]
+                if meta[0] and re.match(date_pattern, meta[0].strftime('%Y-%m-%d')) is not None:
+                    form_data['meta']['form'] = meta[0].strftime('%Y-%m-%d')
+                if meta[1] and re.match(date_pattern, meta[1].strftime('%Y-%m-%d')) is not None:
+                    form_data['meta']['to'] = meta[1].strftime('%Y-%m-%d')
+        form_data['type'] = question_type[form_data['type']]
         qnaire_data['form'].append(form_data)
     return qnaire_data, qnaire_type
 

@@ -1,6 +1,8 @@
+from tempfile import TemporaryFile
+
+from pprint import pprint
 import jwt
 from flask import Blueprint, current_app, redirect, jsonify, request, g, send_from_directory
-from flask_cors import CORS
 from resource.exceptions import InvalidRequestError, QnaireParserError
 from resource.models import db, User as UserModel, \
     Qnaire as QnaireModel, GAnswer as GAnswerModel, \
@@ -9,11 +11,7 @@ from resource.utils import route_match, check_restrain, general_error, \
     select_data, create_data, update_data, delete_data, load_router, excel_parser
 
 api = Blueprint('auth', __name__, url_prefix='/api')
-CORS(api,
-     max_age=3600,
-     methods='GET,POST,PUT,DELETE,OPTIONS',
-     allow_headers='Origin,X-Requested-With,Content-Type,Accept,Authorization'
-     )
+# CORS(api, resources={r"/*": {"origins": "http://localhost:9527"}})
 
 
 @api.before_request
@@ -40,14 +38,15 @@ def check_router():
 
 @api.before_request
 def check_authorization():
-    token_payload = jwt.decode(
-        request.headers['X-Custom-Auth'],
-        current_app.config['SECRET_KEY'],
-        options={'verify_exp': True})
-    if token_payload:
-        g.token_payload = token_payload
-    else:
-        return jsonify(general_error(401, '登陆已过期')), 401
+    if request.method != 'OPTIONS':
+        token_payload = jwt.decode(
+            request.headers['X-Custom-Auth'],
+            current_app.config['SECRET_KEY'],
+            options={'verify_exp': True})
+        if token_payload:
+            g.token_payload = token_payload
+        else:
+            return jsonify(general_error(401, '登陆已过期')), 401
 
 
 @api.route('/')
@@ -55,9 +54,29 @@ def api_documentation():
     return redirect('https://app.swaggerhub.com/apis-docs/wzhzzmzzy/eForm-API/1.0.0-oas3')
 
 
-@api.route('/files/<filename>')
-def get_file(filename):
-    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+@api.route('/my/<target>', methods=['GET'])
+def my_api(target):
+    query = request.args.to_dict()
+    query['owner_id'] = g.token_payload['id']
+    model = None
+    if target == 'qnaire':
+        model = QnaireModel
+    if target == 'anaire':
+        model = AnaireModel
+    if target == 'answer':
+        model = AnswerModel
+    if target == 'all':
+        qnaire_data = QnaireModel.query.filter_by(**query).paginate(per_page=5)
+        anaire_data = AnaireModel.query.filter_by(**query).paginate(per_page=5)
+        return jsonify(
+            general_error(200, {
+                'qnaire': [i.to_dict() for i in qnaire_data.items],
+                'anaire': [i.to_dict() for i in anaire_data.items]
+            })
+        ), 200
+    page = request.args.get('page', 1)
+    data = model.query.paginate(page=page, per_page=10)
+    return jsonify(general_error(200, [i.to_dict() for i in data.items])), 200
 
 
 @api.route('/user', methods=['GET', 'POST'])
@@ -91,9 +110,10 @@ def user_api():
 @api.route('/qnaire', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def qnaire_api():
     # 是否是匿名问卷
-    model = AnaireModel if request.args.get('a') == 'true' else QnaireModel
+    qs = request.args.to_dict()
+    model = AnaireModel if qs.pop('a') == 'true' else QnaireModel
     if request.method == 'GET':
-        return select_data(model, request.args.to_dict())
+        return select_data(model, qs)
     if request.method == 'POST':
         return create_data(model, request.json)
     if request.method == 'PUT':
@@ -127,9 +147,11 @@ def qnaire_from_excel():
     if file is None or file.filename == '':
         return jsonify(general_error(400, 'no file'))
     try:
-        qnaire, qnaire_type = excel_parser(file.stream)
+        with TemporaryFile() as temp_file:
+            temp_file.write(file.stream.read())
+            qnaire, qnaire_type = excel_parser(temp_file)
     except QnaireParserError as e:
         return jsonify(general_error(400, e.message)), 400
     model = QnaireModel if qnaire_type == '实名问卷' else AnaireModel
     qnaire['owner_id'] = g.token_payload['id']
-    return create_data(model, request.json)
+    return create_data(model, qnaire)

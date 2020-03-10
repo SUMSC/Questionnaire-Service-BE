@@ -7,6 +7,9 @@ from sqlalchemy.orm import relationship, backref
 
 
 ignore_set = {'active', 'metadata', 'to_dict', 'to_dict_plain', 'query_class', 'query'}
+db = SQLAlchemy()
+Base = db.Model
+Base.query = db.session.query_property()
 
 
 def to_dict(self):
@@ -16,12 +19,11 @@ def to_dict(self):
     """
     data = {c: getattr(self, c, None) for c in dir(self) if
             (not c.startswith('_') and c not in ignore_set)}
-    print(dir(self))
     for i in data:
         if 'model' in str(type(data[i])):
             data[i] = data[i].to_dict_plain()
         elif isinstance(data[i], list):
-            data[i] = [it.to_dict_plain() for it in data[i]]
+            data[i] = [it.to_dict_plain() if isinstance(it, Base) else it for it in data[i]]
     return data
 
 
@@ -32,9 +34,6 @@ def to_dict_plain(self):
     return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}
 
 
-db = SQLAlchemy()
-Base = db.Model
-Base.query = db.session.query_property()
 Base.to_dict = to_dict
 Base.to_dict_plain = to_dict_plain
 Base.__repr__ = lambda _: str(_.to_dict_plain())
