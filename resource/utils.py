@@ -2,12 +2,17 @@ import logging
 import json
 import time
 import re
+import os
+import functools
+from copy import deepcopy
 
 import yaml
 import tablib
+import requests
 from pprint import pprint
-from flask import Blueprint, current_app, redirect, jsonify, request
-from resource.models import db
+from concurrent import futures
+from flask import current_app, jsonify, request
+from resource.models import db, ChinaArea
 from resource.exceptions import InvalidRequestError, QnaireParserError
 
 question_type = {
@@ -93,7 +98,7 @@ def select_data(model, query):
     """
     current_app.logger.debug("SELECT %s %s" % (model, query))
     offset = query.pop('offset', 0)
-    sort = query.pop('sort', 'create_time')
+    sort = query.pop('sort', 'id')
     limit = query.pop('limit', 10)
     return jsonify(general_error(200, [
         item.to_dict() for item in
@@ -203,6 +208,141 @@ def excel_parser(fd):
     return qnaire_data, qnaire_type
 
 
+def get_area(page=1, level=0):
+    host = 'https://api02.aliyun.venuscn.com'
+    path = '/area/all'
+    app_code = 'f4dbe38260f24ddea262a96c2b6eb40c'
+    url = host + path
+    qs = {
+        'level': level,
+        'page': page,
+        'size': 50,
+    }
+    headers = {
+        'Authorization': 'APPCODE ' + app_code
+    }
+    response = requests.get(url, params=qs, headers=headers)
+    data = response.json()['data']
+    return data
+
+
+def get_city_by_parent(parent_id):
+    host = 'https://api02.aliyun.venuscn.com'
+    path = '/area/query'
+    app_code = 'f4dbe38260f24ddea262a96c2b6eb40c'
+    url = host + path
+    headers = {
+        'Authorization': 'APPCODE ' + app_code
+    }
+    qs = {
+        'parent_id': parent_id
+    }
+    response = requests.get(url, params=qs, headers=headers)
+    data = response.json()['data']
+    return data
+
+
+def dump_area(base_dir, name, depth=1):
+    if depth == 0:
+        return
+    parent_json = os.path.join(base_dir, f'{name}.json')
+    print(f'Loading areas from {parent_json}')
+    with open(parent_json, 'r', encoding='utf8') as f:
+        areas = json.load(f)
+        for area in areas:
+            area_dir = os.path.join(base_dir, area["pinyin"])
+            area_json = os.path.join(area_dir, f'{area["pinyin"]}.json')
+            if not os.path.exists(area_dir):
+                os.mkdir(area_dir)
+                cities = get_city_by_parent(area['id'])
+                with open(area_json, 'w', encoding='utf8') as city_f:
+                    print(f'Dumping areas to {area_json}')
+                    json.dump(cities, city_f)
+            dump_area(area_dir, area['pinyin'], depth=depth-1)
+
+
+def dump_province_to_csv():
+    provinces = get_area()
+    provinces_data = tablib.Dataset(headers=provinces[0].keys())
+    for i in provinces:
+        provinces_data.append(i.values())
+    print(provinces_data.export('csv'))
+    with open('static/provinces.csv', 'w', encoding='gbk', newline='\n') as csv_f:
+        csv_f.write(provinces_data.export('csv'))
+
+
+def dump_city_to_csv(level=1, from_page=1, max_page=15, step=10):
+    get_city = functools.partial(get_area, level=level)
+    page_one = get_city(from_page)
+    city_data = tablib.Dataset(headers=page_one[0].keys())
+    for city in page_one:
+        city_data.append(city.values())
+    last_page = max_page
+    if max_page < 50:
+        with futures.ProcessPoolExecutor(max_workers=6) as executor:
+            res = executor.map(get_city, range(from_page+1, max_page))
+        res = tuple(res)
+        for page in res:
+            for city in page:
+                city_data.append(city.values())
+    else:
+        for i in range(from_page+1, max_page, step):
+            if i % 50 < 10:
+                print('Now:', i)
+            with futures.ProcessPoolExecutor(max_workers=6) as executor:
+                res = executor.map(get_city, range(i, i+step))
+            res = tuple(res)
+            exit_flag = False
+            for page in res:
+                if len(page) == 0:
+                    last_page = i + step
+                    exit_flag = True
+                    break
+                for city in page:
+                    city_data.append(city.values())
+            if exit_flag:
+                print('End:', last_page)
+                break
+    with open(f'static/city_{level}_{from_page}_{last_page}.csv', 'w', encoding='gbk', newline='\n') as csv_f:
+        csv_f.write(city_data.export('csv'))
+
+
+def remove_redundancy(csv_path):
+    with open(csv_path, 'w+', encoding='gbk', newline='\n') as f:
+        csv_data = tablib.Dataset().load(f, format='csv')
+        csv_data.remove_duplicates()
+        f.write(csv_data.export('csv'))
+
+
+def dump_csv_to_db(csv_path):
+    with open(csv_path, 'r', encoding='gbk', newline='\n') as f:
+        csv_data = tablib.Dataset().load(f, format='csv')
+        for i in csv_data:
+            new_field = ChinaArea(**i)
+            db.session.add(new_field)
+        db.session.commit()
+
+
+def get_all_area():
+    areas = db.session.query(ChinaArea).filter(ChinaArea.level < 3).all()
+    counties = {i.id: dict(label=i.pinyin, value=i.name, pid=i.parent_id) for i in areas if i.level == 2}
+    cities = {i.id: dict(label=i.pinyin, value=i.name, pid=i.parent_id, children=[]) for i in areas if i.level == 1}
+    provinces = {i.id: dict(label=i.pinyin, value=i.name, children=[]) for i in areas if i.level == 0}
+    del areas
+    for county in counties.values():
+        cities[county['pid']]['children'].append(dict(label=county['label'], value=county['value']))
+    del counties
+    for city in cities.values():
+        provinces[city['pid']]['children'].append(dict(
+            label=city['label'],
+            value=city['value'],
+            children=deepcopy(city['children'])))
+    del cities
+    return provinces
+
+
 if __name__ == '__main__':
-    with open('static/qnaire_excel_test.xlsx', 'rb') as f:
-        pprint(excel_parser(f))
+    # with open('static/qnaire_excel_test.xlsx', 'rb') as f:
+    #     pprint(excel_parser(f))
+    # dump_area('static/china_administrative_divisions', 'provinces', depth=4)
+    dump_city_to_csv(2, 1, 100)

@@ -2,7 +2,7 @@ from datetime import datetime
 from collections import Iterable
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, INT, VARCHAR, TEXT, TIMESTAMP, BOOLEAN, ForeignKey, DATE, JSON
+from sqlalchemy import Column, INT, VARCHAR, TEXT, TIMESTAMP, BOOLEAN, ForeignKey, DATE, JSON, REAL
 from sqlalchemy.orm import relationship, backref
 
 
@@ -107,3 +107,18 @@ class GAnswer(Base):
         Anaire,
         backref=backref("answer", uselist=True)
     )
+
+
+class ChinaArea(Base):
+    __tablename__ = 'china_area'
+    id = Column(INT, primary_key=True, comment='地区 ID')
+    parent_id = Column(INT, primary_key=True, comment='上级地区 ID')
+    name = Column(VARCHAR(50), nullable=False, comment='地区名')
+    level = Column(INT, nullable=False, comment='地区等级，0-4')
+    pinyin = Column(VARCHAR(50), nullable=False, comment='地区英文名')
+    merger_name = Column(VARCHAR(100), nullable=False, comment='全量区域')
+    short_name = Column(VARCHAR(30), comment='地区名（不带行政级别）')
+    city_code = Column(VARCHAR(20), nullable=True, comment='电话区号')
+    zip_code = Column(VARCHAR(10), nullable=False, comment='邮政编码')
+    lng = Column(REAL, nullable=False, comment='纬度')
+    lat = Column(REAL, nullable=False, comment='经度')

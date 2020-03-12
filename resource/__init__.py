@@ -1,4 +1,5 @@
 import os
+import pickle
 
 from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
@@ -6,14 +7,16 @@ from werkzeug.utils import secure_filename
 from config import config
 from .models import db
 from .restful import api
+from .utils import dump_csv_to_db, get_all_area
 
 
 def create_app(env='DEVELOP'):
     app = Flask(__name__, instance_relative_config=True)
     app.register_blueprint(api)
     app.config.from_object(config[env])
-
     db.init_app(app)
+    with open('resource/static/china_area.pk', 'rb') as pkf:
+        china_area = pickle.load(pkf)
 
     @app.route('/upload', methods=['POST'])
     def upload_file():
@@ -54,5 +57,9 @@ def create_app(env='DEVELOP'):
         """)
         db.session.commit()
         return "success"
+
+    @app.route('/china_area')
+    def get_china_area():
+        return jsonify(china_area)
 
     return app
