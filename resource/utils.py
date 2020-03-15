@@ -325,9 +325,9 @@ def dump_csv_to_db(csv_path):
 
 def get_all_area():
     areas = db.session.query(ChinaArea).filter(ChinaArea.level < 3).all()
-    counties = {i.id: dict(label=i.pinyin, value=i.name, pid=i.parent_id) for i in areas if i.level == 2}
-    cities = {i.id: dict(label=i.pinyin, value=i.name, pid=i.parent_id, children=[]) for i in areas if i.level == 1}
-    provinces = {i.id: dict(label=i.pinyin, value=i.name, children=[]) for i in areas if i.level == 0}
+    counties = {i.id: dict(value=i.pinyin, label=i.name, pid=i.parent_id) for i in areas if i.level == 2}
+    cities = {i.id: dict(value=i.pinyin, label=i.name, pid=i.parent_id, children=[]) for i in areas if i.level == 1}
+    provinces = {i.id: dict(value=i.pinyin, label=i.name, children=[]) for i in areas if i.level == 0}
     del areas
     for county in counties.values():
         cities[county['pid']]['children'].append(dict(label=county['label'], value=county['value']))
@@ -345,4 +345,4 @@ if __name__ == '__main__':
     # with open('static/qnaire_excel_test.xlsx', 'rb') as f:
     #     pprint(excel_parser(f))
     # dump_area('static/china_administrative_divisions', 'provinces', depth=4)
-    dump_city_to_csv(2, 1, 100)
+    pass

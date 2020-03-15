@@ -66,12 +66,12 @@ def my_api(target):
     if target == 'answer':
         model = AnswerModel
     if target == 'all':
-        qnaire_data = QnaireModel.query.filter_by(**query).paginate(per_page=5)
-        anaire_data = AnaireModel.query.filter_by(**query).paginate(per_page=5)
+        qnaire_data = QnaireModel.query.filter_by(**query)
+        anaire_data = AnaireModel.query.filter_by(**query)
         return jsonify(
             general_error(200, {
-                'qnaire': [i.to_dict() for i in qnaire_data.items],
-                'anaire': [i.to_dict() for i in anaire_data.items]
+                'qnaire': [i.to_dict() for i in qnaire_data],
+                'anaire': [i.to_dict() for i in anaire_data],
             })
         ), 200
     page = request.args.get('page', 1)

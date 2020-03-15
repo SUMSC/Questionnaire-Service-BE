@@ -58,7 +58,7 @@ def create_app(env='DEVELOP'):
         db.session.commit()
         return "success"
 
-    @app.route('/china_area')
+    @app.route('/api/china_area')
     def get_china_area():
         return jsonify(china_area)
 
