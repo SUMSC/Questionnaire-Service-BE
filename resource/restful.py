@@ -1,8 +1,13 @@
+import os
 from tempfile import TemporaryFile
+from datetime import datetime
+from time import time
 
-from pprint import pprint
 import jwt
+from pprint import pprint
 from flask import Blueprint, current_app, redirect, jsonify, request, g, send_from_directory
+from werkzeug.utils import secure_filename
+
 from resource.exceptions import InvalidRequestError, QnaireParserError
 from resource.models import db, User as UserModel, \
     Qnaire as QnaireModel, GAnswer as GAnswerModel, \
@@ -38,10 +43,12 @@ def check_router():
 
 @api.before_request
 def check_authorization():
-    if request.method != 'OPTIONS':
+    token = request.cookies.get('AUTHORIZATION')
+    if not token:
+        token = request.headers.get('X-Custom-Auth')
+    if token:
         token_payload = jwt.decode(
-            request.headers['X-Custom-Auth'],
-            current_app.config['SECRET_KEY'],
+            token, current_app.config['SECRET_KEY'],
             options={'verify_exp': True})
         if token_payload:
             g.token_payload = token_payload
@@ -52,6 +59,33 @@ def check_authorization():
 @api.route('/')
 def api_documentation():
     return redirect('https://app.swaggerhub.com/apis-docs/wzhzzmzzy/eForm-API/1.0.0-oas3')
+
+
+@api.route('/upload', methods=['POST', 'DELETE'])
+def upload_file():
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if file is None or file.filename == '':
+            return jsonify(general_error(400, 'no file'))
+        if not os.path.exists('upload'):
+            os.mkdir('upload')
+        today = str(datetime.now()).split()[0]
+        now = int(time())
+        today_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], today)
+        filename = f'{g.token_payload["id"]}_{now}_{secure_filename(file.filename)}'
+        if not os.path.exists(today_dir):
+            os.mkdir(today_dir)
+        file.save(os.path.join(today_dir, filename))
+        return jsonify(general_error(200, os.path.join(today_dir, filename)))
+    if request.method == 'DELETE':
+        file = request.json['file']
+        print(file)
+        try:
+            os.remove(file)
+        except Exception as e:
+            return jsonify(general_error(400, e))
+        else:
+            return jsonify(general_error(200, 'ok'))
 
 
 @api.route('/my/<target>', methods=['GET'])
@@ -132,6 +166,10 @@ def answer_api():
             return jsonify(general_error(400, 'anonymous answer cannot be selected'))
         return select_data(model, request.args.to_dict())
     if request.method == 'POST':
+        if not is_anonymous:
+            data = dict(**request.json, owner_id=g.token_payload['id'])
+            print(data)
+            return create_data(model, data)
         return create_data(model, request.json)
     if request.method == 'PUT':
         if is_anonymous:

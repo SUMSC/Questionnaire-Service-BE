@@ -1,8 +1,6 @@
-import os
 import pickle
 
 from flask import Flask, request, jsonify, send_from_directory
-from werkzeug.utils import secure_filename
 
 from config import config
 from .models import db
@@ -17,16 +15,6 @@ def create_app(env='DEVELOP'):
     db.init_app(app)
     with open('resource/static/china_area.pk', 'rb') as pkf:
         china_area = pickle.load(pkf)
-
-    @app.route('/upload', methods=['POST'])
-    def upload_file():
-        print(request.files)
-        file = request.files.get('file')
-        if file is None or file.filename == '':
-            return jsonify({"ok": False, "detail": "no file"})
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return jsonify({"ok": True, "detail": filename})
 
     @app.route('/build_index')
     def build_index_pg():

@@ -100,15 +100,20 @@ def select_data(model, query):
     offset = query.pop('offset', 0)
     sort = query.pop('sort', 'id')
     limit = query.pop('limit', 10)
-    return jsonify(general_error(200, [
+    result = [
         item.to_dict() for item in
         db.session.query(model).filter_by(**query).order_by(
             getattr(model, sort).desc()
         ).limit(limit).offset(offset).all()
-    ])), 200
+    ]
+    if len(result) > 0:
+        return jsonify(general_error(200, result)), 200
+    else:
+        return jsonify(general_error(404, 'not found')), 404
 
 
 def create_data(model, data):
+    print(data, model)
     current_app.logger.debug("INSERT %s %s" % (model, data))
     new_field = model(**data)
     db.session.add(new_field)
