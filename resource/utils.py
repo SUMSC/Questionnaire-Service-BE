@@ -17,8 +17,8 @@ from resource.exceptions import InvalidRequestError, QnaireParserError
 
 question_type = {
     '文本描述': 'plain-text',
-    '单项选择题': 'qnaire-select',
-    '多项选择题': 'qnaire-checkbox',
+    '单选题': 'qnaire-select',
+    '多选题': 'qnaire-checkbox',
     '单行文本题': 'qnaire-input',
     '多行文本题': 'qnaire-textarea',
     '地域选择题': 'area-picker',
@@ -206,7 +206,10 @@ def excel_parser(fd):
                     form_data['meta']['form'] = meta[0].strftime('%Y-%m-%d')
                 if meta[1] and re.match(date_pattern, meta[1].strftime('%Y-%m-%d')) is not None:
                     form_data['meta']['to'] = meta[1].strftime('%Y-%m-%d')
-        form_data['type'] = question_type[form_data['type']]
+        try:
+            form_data['type'] = question_type[form_data['type']]
+        except KeyError as e:
+            raise QnaireParserError(f'未知的题目类型：{e.args[0]}')
         qnaire_data['form'].append(form_data)
     return qnaire_data, qnaire_type
 
