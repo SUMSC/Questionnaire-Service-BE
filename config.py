@@ -7,6 +7,7 @@ class Config(object):
     TRACK_MODIFICATIONS = True
     SECRET_KEY = 'changeit'
     UPLOAD_FOLDER = 'upload'
+    STATIC_FOLDER = 'static'
 
 
 class ProductionConfig(Config):
