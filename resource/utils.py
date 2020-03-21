@@ -113,14 +113,12 @@ def select_data(model, query):
 
 
 def create_data(model, data):
-    print(data, model)
     current_app.logger.debug("INSERT %s %s" % (model, data))
     new_field = model(**data)
     db.session.add(new_field)
     try:
         db.session.commit()
     except Exception as e:
-        print(str(e))
         detail = str(e).split('\n')[1]
         return jsonify(general_error(400, detail)), 400
     if getattr(new_field, 'id', None):

@@ -79,7 +79,6 @@ def upload_file():
         return jsonify(general_error(200, os.path.join(today_dir, filename)))
     if request.method == 'DELETE':
         file = request.json['file']
-        print(file)
         try:
             os.remove(file)
         except Exception as e:
