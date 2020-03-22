@@ -15,4 +15,4 @@ ADD config.py ./
 
 RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-ENTRYPOINT  ["gunicorn", "--config=gunicorn.conf.py", "resource:create_app()"]
+CMD  ["gunicorn", "--config=gunicorn.conf.py", "resource:create_app()"]
