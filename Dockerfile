@@ -16,4 +16,4 @@ ADD gunicorn.conf.py ./
 
 RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-ENTRYPOINT  ["gunicorn", "--config=gunicorn.conf.py", "auth:create_app()"]
+ENTRYPOINT  ["gunicorn", "--config=gunicorn.conf.py", "resource:create_app()"]
