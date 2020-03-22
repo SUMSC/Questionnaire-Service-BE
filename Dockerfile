@@ -2,6 +2,8 @@ FROM python:3.6-slim
 
 LABEL VERSION="1.1" MAINTAINER="Amber<wzhzzmzzy@gmail.com>"
 
+VOLUME /var/log/eform
+
 EXPOSE 8002
 
 WORKDIR /opt/resource
