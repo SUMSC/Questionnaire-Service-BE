@@ -61,6 +61,7 @@ class Qnaire(Base):
         User,
         backref=backref("my_qnaire", uselist=True)
     )
+    a = Column(BOOLEAN, nullable=False, comment="是否匿名问卷", default=True)
 
 
 class Anaire(Base):
@@ -89,7 +90,7 @@ class Answer(Base):
         Qnaire,
         backref=backref("answer", uselist=True)
     )
-    owner_id = Column(VARCHAR(16), ForeignKey("user.id_tag"), nullable=False, comment="答卷者")
+    owner_id = Column(VARCHAR(16), ForeignKey("user.id_tag"), nullable=True, comment="答卷者")
     owner = relationship(
         User,
         backref=backref("my_answer", uselist=True)

@@ -10,8 +10,7 @@ from werkzeug.utils import secure_filename
 
 from resource.exceptions import InvalidRequestError, QnaireParserError
 from resource.models import db, User as UserModel, \
-    Qnaire as QnaireModel, GAnswer as GAnswerModel, \
-    Answer as AnswerModel, Anaire as AnaireModel
+    Qnaire as QnaireModel, Answer as AnswerModel
 from resource.utils import route_match, check_restrain, general_error, \
     select_data, create_data, update_data, delete_data, load_router, excel_parser
 
@@ -94,22 +93,20 @@ def my_api(target):
     model = None
     if target == 'qnaire':
         model = QnaireModel
-    if target == 'anaire':
-        model = AnaireModel
-    if target == 'answer':
+    elif target == 'answer':
         model = AnswerModel
-    if target == 'all':
-        qnaire_data = QnaireModel.query.filter_by(**query)
-        anaire_data = AnaireModel.query.filter_by(**query)
-        return jsonify(
-            general_error(200, {
-                'qnaire': [i.to_dict() for i in qnaire_data],
-                'anaire': [i.to_dict() for i in anaire_data],
-            })
-        ), 200
+    else:
+        return jsonify(general_error(401, 'unknown target')), 401
     page = request.args.get('page', 1)
-    data = model.query.paginate(page=page, per_page=10)
-    return jsonify(general_error(200, [i.to_dict() for i in data.items])), 200
+    sort = query.pop('sort', 'create_time')
+    data = db.session.query(model).filter_by(**query).order_by(
+        getattr(model, sort).desc()
+    ).paginate(page=page, per_page=10)
+    # data = model.query.paginate(page=page, per_page=10)
+    return jsonify(general_error(200, {
+        target: [i.to_dict() for i in data.items],
+        'page_num': data.pages
+    })), 200
 
 
 @api.route('/user', methods=['GET', 'POST'])
@@ -144,7 +141,7 @@ def user_api():
 def qnaire_api():
     # 是否是匿名问卷
     qs = request.args.to_dict()
-    model = AnaireModel if qs.pop('a') == 'true' else QnaireModel
+    model = QnaireModel
     if request.method == 'GET':
         return select_data(model, qs)
     if request.method == 'POST':
@@ -158,23 +155,21 @@ def qnaire_api():
 
 @api.route('/answer', methods=['GET', 'POST', 'PUT'])
 def answer_api():
-    is_anonymous = request.args.get('a') == 'true'
-    model = GAnswerModel if is_anonymous else AnswerModel
+    # is_anonymous = request.args.get('a') == 'true'
+    # model = GAnswerModel if is_anonymous else AnswerModel
+    model = AnswerModel
     if request.method == 'GET':
-        if is_anonymous:
-            return jsonify(general_error(400, 'anonymous answer cannot be selected'))
+        # if is_anonymous:
+        #     return jsonify(general_error(400, 'anonymous answer cannot be selected'))
         return select_data(model, request.args.to_dict())
     if request.method == 'POST':
-        if not is_anonymous:
-            data = dict(**request.json, owner_id=g.token_payload['id'])
-            print(data)
-            return create_data(model, data)
-        return create_data(model, request.json)
+        data = dict(**request.json, owner_id=g.token_payload['id'])
+        return create_data(model, data)
     if request.method == 'PUT':
-        if is_anonymous:
-            return jsonify(general_error(400, 'anonymous answer cannot be updated'))
+        # if is_anonymous:
+        #     return jsonify(general_error(400, 'anonymous answer cannot be updated'))
         data = request.json
-        return update_data(model, {'id': request.get_json()['id']}, data)
+        return update_data(model, {'id': data.pop('id')}, data)
 
 
 @api.route('/import/excel', methods=['POST'])
@@ -186,9 +181,15 @@ def qnaire_from_excel():
     try:
         with TemporaryFile() as temp_file:
             temp_file.write(file.stream.read())
-            qnaire, qnaire_type = excel_parser(temp_file)
+            qnaire = excel_parser(temp_file)
     except QnaireParserError as e:
         return jsonify(general_error(400, e.message)), 400
-    model = QnaireModel if qnaire_type == '实名问卷' else AnaireModel
+    model = QnaireModel
     qnaire['owner_id'] = g.token_payload['id']
+    qnaire['active'] = False
+    qnaire['settings'] = {
+        'only_once': True,
+        'allow_edit': False,
+        'shuffle_selections': False
+    }
     return create_data(model, qnaire)

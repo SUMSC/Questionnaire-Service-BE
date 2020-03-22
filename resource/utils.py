@@ -98,14 +98,13 @@ def select_data(model, query):
     :return:
     """
     current_app.logger.debug("SELECT %s %s" % (model, query))
-    offset = query.pop('offset', 0)
-    sort = query.pop('sort', 'id')
-    limit = query.pop('limit', 10)
+    sort = query.pop('sort', 'create_time')
+    desc = query.pop('desc', False)
     result = [
         item.to_dict() for item in
         db.session.query(model).filter_by(**query).order_by(
-            getattr(model, sort).desc()
-        ).limit(limit).offset(offset).all()
+            getattr(model, sort).desc() if desc else getattr(model, sort)
+        ).all()
     ]
     if len(result) > 0:
         return jsonify(general_error(200, result)), 200
@@ -184,6 +183,7 @@ def excel_parser(fd):
     qnaire_type = qnaire.get_col(0)[0].strip()
     if qnaire_type not in ('实名问卷', '匿名问卷'):
         raise QnaireParserError('unknown type of qnaire')
+    qnaire_data['a'] = qnaire_type == '匿名问卷'
     qnaire_data['name'] = headers[0].strip()
     qnaire_data['description'] = qnaire.get_col(0)[1].strip()
     if len(qnaire_data['name']) > 30:
@@ -203,7 +203,7 @@ def excel_parser(fd):
             meta = qnaire.get_col(i + 1)
             form_data['meta'] = {}
             if form_data['type'] in ('单选题', '多选题'):
-                form_data['meta']['selection'] = meta
+                form_data['meta']['selection'] = tuple(filter(lambda x: x, meta))
             if form_data['type'] == '日期选择题':
                 if meta[0] and re.match(date_pattern, meta[0].strftime('%Y-%m-%d')) is not None:
                     form_data['meta']['form'] = meta[0].strftime('%Y-%m-%d')
@@ -214,7 +214,7 @@ def excel_parser(fd):
         except KeyError as e:
             raise QnaireParserError(f'未知的题目类型：{e.args[0]}')
         qnaire_data['form'].append(form_data)
-    return qnaire_data, qnaire_type
+    return qnaire_data
 
 
 def get_area(page=1, level=0):
