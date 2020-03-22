@@ -81,7 +81,7 @@ pipeline {
             sshCommand remote: remote, command: "docker pull ${DOCKER_REPO}/${DOCKER_TAG}"
             sshCommand remote: remote, command: "docker stop ${DOCKER_NAME} | true"
             sshCommand remote: remote, command: "docker rm ${DOCKER_NAME} | true"
-            sshCommand remote: remote, command: "docker run --name ${DOCKER_NAME} --net host -p 127.0.0.1:${PORT}:${PORT} -d ${DOCKER_REPO}/${DOCKER_TAG} -v /home/amber/upload:/opt/resource/upload"
+            sshCommand remote: remote, command: "docker run --name ${DOCKER_NAME} --net host -v /home/amber/upload:/opt/resource/upload" -p 127.0.0.1:${PORT}:${PORT} -d ${DOCKER_REPO}/${DOCKER_TAG}
           }
         }
       }
