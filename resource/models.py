@@ -55,7 +55,7 @@ class Qnaire(Base):
     active = Column(BOOLEAN, nullable=False, default=False, comment="FLAG值，问卷是否处于活动中")
     deadline = Column(DATE, nullable=True, comment="问卷填写截止时间")
     create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
-
+    settings = Column(JSON, nullable=False, comment="问卷设置")
     owner_id = Column(VARCHAR(16), ForeignKey("user.id_tag"), nullable=False)
     owner = relationship(
         User,
@@ -72,7 +72,7 @@ class Anaire(Base):
     active = Column(BOOLEAN, nullable=False, default=False, comment="FLAG值，问卷是否处于活动中")
     deadline = Column(DATE, nullable=True, comment="问卷填写截止时间")
     create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
-
+    settings = Column(JSON, nullable=False, comment="问卷设置")
     owner_id = Column(VARCHAR(16), ForeignKey("user.id_tag"), nullable=False)
     owner = relationship(
         User,

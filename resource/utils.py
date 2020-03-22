@@ -5,6 +5,7 @@ import re
 import os
 import functools
 from copy import deepcopy
+from datetime import datetime
 
 import yaml
 import tablib
@@ -135,6 +136,8 @@ def update_data(model, ids, data):
     if len(data.items()) == 0:
         return jsonify(general_error(200, 'nothing to update')), 200
     for i in data:
+        if i == 'deadline':
+            data[i] = datetime.strptime(data[i], "%a %b %d %Y %H:%M:%S %Z%z")
         setattr(field, i, data[i])
     try:
         db.session.commit()
