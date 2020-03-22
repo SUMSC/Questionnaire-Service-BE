@@ -2,7 +2,7 @@ FROM python:3.6-slim
 
 LABEL VERSION="1.1" MAINTAINER="Amber<wzhzzmzzy@gmail.com>"
 
-EXPOSE 8001
+EXPOSE 8002
 
 WORKDIR /opt/resource
 
