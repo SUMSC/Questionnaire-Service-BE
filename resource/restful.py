@@ -71,7 +71,8 @@ def upload_file():
         today = str(datetime.now()).split()[0]
         now = int(time())
         today_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], today)
-        filename = f'{g.token_payload["id"]}_{now}_{secure_filename(file.filename)}'
+        user = getattr(g, "token_payload", { 'id': 'guest' })
+        filename = f'{user["id"]}_{now}_{secure_filename(file.filename)}'
         if not os.path.exists(today_dir):
             os.mkdir(today_dir)
         file.save(os.path.join(today_dir, filename))
@@ -155,19 +156,13 @@ def qnaire_api():
 
 @api.route('/answer', methods=['GET', 'POST', 'PUT'])
 def answer_api():
-    # is_anonymous = request.args.get('a') == 'true'
-    # model = GAnswerModel if is_anonymous else AnswerModel
     model = AnswerModel
     if request.method == 'GET':
-        # if is_anonymous:
-        #     return jsonify(general_error(400, 'anonymous answer cannot be selected'))
         return select_data(model, request.args.to_dict())
     if request.method == 'POST':
         data = dict(**request.json, owner_id=g.token_payload['id'])
         return create_data(model, data)
     if request.method == 'PUT':
-        # if is_anonymous:
-        #     return jsonify(general_error(400, 'anonymous answer cannot be updated'))
         data = request.json
         return update_data(model, {'id': data.pop('id')}, data)
 
