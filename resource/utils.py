@@ -205,7 +205,7 @@ def excel_parser(fd):
             meta = qnaire.get_col(i + 1)
             form_data['meta'] = {}
             if form_data['type'] in ('单选题', '多选题'):
-                form_data['meta']['selection'] = [dict(value=i) for i in filter(lambda x: x, meta)]
+                form_data['meta']['selection'] = [i for i in filter(lambda x: x, meta)]
             if form_data['type'] == '日期选择题':
                 if meta[0] and re.match(date_pattern, meta[0].strftime('%Y-%m-%d')) is not None:
                     form_data['meta']['form'] = meta[0].strftime('%Y-%m-%d')
