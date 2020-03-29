@@ -6,6 +6,7 @@ import os
 import functools
 from copy import deepcopy
 from datetime import datetime
+from collections import Iterable
 
 import yaml
 import tablib
@@ -350,6 +351,15 @@ def get_all_area():
             children=deepcopy(city['children'])))
     del cities
     return provinces
+
+
+def flatten(i):
+    for el in i:
+        if isinstance(el, Iterable) and not isinstance(el, str):
+            for sub in flatten(el):
+                yield sub
+        else:
+            yield el
 
 
 if __name__ == '__main__':

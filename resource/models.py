@@ -1,5 +1,4 @@
 from datetime import datetime
-from collections import Iterable
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, INT, VARCHAR, TEXT, TIMESTAMP, BOOLEAN, ForeignKey, DATE, JSON, REAL
@@ -64,23 +63,6 @@ class Qnaire(Base):
     a = Column(BOOLEAN, nullable=False, comment="是否匿名问卷", default=True)
 
 
-class Anaire(Base):
-    __tablename__ = "anaire"
-    id = Column(INT, primary_key=True, comment="自增主键", autoincrement=True)
-    name = Column(VARCHAR(32), nullable=False, comment="问卷名称")
-    description = Column(TEXT, nullable=True, comment="问卷详细信息")
-    form = Column(JSON, nullable=False, comment="问卷表单样式，JSONString")
-    active = Column(BOOLEAN, nullable=False, default=False, comment="FLAG值，问卷是否处于活动中")
-    deadline = Column(DATE, nullable=True, comment="问卷填写截止时间")
-    create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
-    settings = Column(JSON, nullable=False, comment="问卷设置")
-    owner_id = Column(VARCHAR(16), ForeignKey("user.id_tag"), nullable=False)
-    owner = relationship(
-        User,
-        backref=backref("my_anaire", uselist=True)
-    )
-
-
 class Answer(Base):
     __tablename__ = "answer"
     id = Column(INT, primary_key=True, comment="自增主键", autoincrement=True)
@@ -96,18 +78,6 @@ class Answer(Base):
         backref=backref("my_answer", uselist=True)
     )
     create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
-
-
-class GAnswer(Base):
-    __tablename__ = "ganswer"
-    id = Column(INT, primary_key=True, comment="自增主键", autoincrement=True)
-    answer = Column(JSON, nullable=False, comment="答卷，JSONString")
-    qnaire_id = Column(INT, ForeignKey("anaire.id"), nullable=False, comment="所属问卷")
-    create_time = Column(TIMESTAMP, nullable=False, comment="此项创建时间", default=datetime.now)
-    qnaire = relationship(
-        Anaire,
-        backref=backref("answer", uselist=True)
-    )
 
 
 class ChinaArea(Base):

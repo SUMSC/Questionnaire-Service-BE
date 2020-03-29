@@ -12,9 +12,12 @@ from resource.exceptions import InvalidRequestError, QnaireParserError
 from resource.models import db, User as UserModel, \
     Qnaire as QnaireModel, Answer as AnswerModel
 from resource.utils import route_match, check_restrain, general_error, \
-    select_data, create_data, update_data, delete_data, load_router, excel_parser
+    select_data, create_data, update_data, delete_data, load_router, excel_parser, \
+    flatten
 
 api = Blueprint('auth', __name__, url_prefix='/api')
+
+
 # CORS(api, resources={r"/*": {"origins": "http://localhost:9527"}})
 
 
@@ -71,7 +74,7 @@ def upload_file():
         today = str(datetime.now()).split()[0]
         now = int(time())
         today_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], today)
-        user = getattr(g, "token_payload", { 'id': 'guest' })
+        user = getattr(g, "token_payload", {'id': 'guest'})
         filename = f'{user["id"]}_{now}_{secure_filename(file.filename)}'
         if not os.path.exists(today_dir):
             os.mkdir(today_dir)
@@ -188,3 +191,30 @@ def qnaire_from_excel():
         'shuffle_selections': False
     }
     return create_data(model, qnaire)
+
+
+@api.route('/analysis', methods=['GET'])
+def analysis_api():
+    curr = db.session.query(QnaireModel).filter_by(id=request.args.get('id')).first()
+    if curr is None:
+        return jsonify(general_error(400, 'cannot found')), 400
+    qnaire = curr.to_dict()
+    result = []
+    for i, form in enumerate([i for i in qnaire['form']]):
+        if form['type'] == 'plain-text':
+            continue
+        answers = [a['answer'][i] for a in qnaire['answer']]
+        if form['type'] == 'file-uploader':
+            result.append([])
+        elif form['type'] == 'qnaire-select':
+            answers = [form['meta']['selection'][a]['value'] for a in answers]
+            count = {s['value']: answers.count(s['value']) for s in form['meta']['selection']}
+            result.append(dict(count=count, answers=answers))
+        elif form['type'] == 'qnaire-checkbox':
+            answers = [form['meta']['selection'][a]['value'] for ans in answers for a in ans]
+            temp = list(flatten(answers))
+            count = {s['value']: temp.count(s['value']) for s in form['meta']['selection']}
+            result.append(dict(count=count, answers=answers))
+        else:
+            result.append(answers)
+    return jsonify(general_error(200, result))
